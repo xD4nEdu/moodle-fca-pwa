@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+env/
+venv/
+bot_fca.db
+bot_fca_old.db
+.env
+mi_link_publico.txt
+
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+*.log
+
+# Cargas estáticas temporales
+cloudflared.exe
+*.json
+*.sqlite
