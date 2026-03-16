@@ -17,5 +17,5 @@ frontend/.env
 
 # Cargas estáticas temporales
 cloudflared.exe
-*.json
+moodle_ws_dump.json
 *.sqlite
