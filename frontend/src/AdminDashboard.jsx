@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ThemeToggle from './ThemeToggle';
+import { apiUrl } from './api';
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -10,7 +11,7 @@ export default function AdminDashboard() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('/api/users');
+      const res = await fetch(apiUrl('/api/users'));
       if (!res.ok) throw new Error('Error al obtener carga de usuarios');
       const data = await res.json();
       setUsers(data.users);
@@ -28,7 +29,7 @@ export default function AdminDashboard() {
 
   const handleToggle = async (userId) => {
     try {
-      const res = await fetch(`/api/users/${userId}/toggle`, { method: 'POST' });
+      const res = await fetch(apiUrl(`/api/users/${userId}/toggle`), { method: 'POST' });
       if (res.ok) fetchUsers();
     } catch (e) {
       alert("Error: " + e.message);
@@ -38,7 +39,7 @@ export default function AdminDashboard() {
   const handleDelete = async (userId) => {
     if (!window.confirm("¿Seguro que deseas eliminar este usuario?")) return;
     try {
-      const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+      const res = await fetch(apiUrl(`/api/users/${userId}`), { method: 'DELETE' });
       if (res.ok) fetchUsers();
     } catch (e) {
       alert("Error: " + e.message);
@@ -47,7 +48,7 @@ export default function AdminDashboard() {
 
   const handleTestPush = async (userId) => {
     try {
-      const res = await fetch(`/api/users/${userId}/test_push`, { method: 'POST' });
+      const res = await fetch(apiUrl(`/api/users/${userId}/test_push`), { method: 'POST' });
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.detail || 'Error en Push');

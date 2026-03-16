@@ -8,7 +8,7 @@ def run():
     print("Iniciando tu servidor en internet de forma segura...")
     # Usar 127.0.0.1 y protocolo http2 previene freeze sockets en Win/Cloudflare
     p = subprocess.Popen(
-        [r"cloudflared.exe", "tunnel", "--protocol", "http2", "--url", "http://127.0.0.1:8000"],
+        [r"cloudflared.exe", "tunnel", "--protocol", "http2", "--url", "http://192.168.0.111:8000"],
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
         text=True,

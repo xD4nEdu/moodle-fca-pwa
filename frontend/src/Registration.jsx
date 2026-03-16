@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ThemeToggle from './ThemeToggle';
+import { apiUrl } from './api';
 
 // Helpers
 const isIOS = () => {
@@ -43,7 +44,7 @@ export default function Registration() {
     const storedUserId = localStorage.getItem('moodle_pwa_user_id');
     if (storedUserId) {
       setHasAccount(true);
-      fetch(`/api/users/${storedUserId}/status`)
+      fetch(apiUrl(`/api/users/${storedUserId}/status`))
         .then(res => res.json())
         .then(data => setAccountStatus(data))
         .catch(err => console.error(err));
@@ -106,7 +107,7 @@ export default function Registration() {
       }
       
       // 2. Registrar en Backend
-      const userRes = await fetch('/api/users', {
+      const userRes = await fetch(apiUrl('/api/users'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ faculty, moodle_username: username, moodle_password: password })
@@ -120,7 +121,7 @@ export default function Registration() {
       const { user_id } = await userRes.json();
       
       // 3. Obtener VAPID y Suscribir
-      const vapidRes = await fetch('/api/vapid-public-key');
+      const vapidRes = await fetch(apiUrl('/api/vapid-public-key'));
       const { vapid_public_key } = await vapidRes.json();
       
       const registration = await navigator.serviceWorker.ready;
@@ -130,7 +131,7 @@ export default function Registration() {
       });
       
       // 4. Enviar Sub al Backend
-      const subRes = await fetch('/api/subscribe', {
+      const subRes = await fetch(apiUrl('/api/subscribe'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id, subscription })
@@ -139,12 +140,12 @@ export default function Registration() {
       if (!subRes.ok) throw new Error('Error al vincular el dispositivo Push.');
       
       // 5. Probar Push
-      await fetch(`/api/users/${user_id}/test_push`, { method: 'POST' });
+      await fetch(apiUrl(`/api/users/${user_id}/test_push`), { method: 'POST' });
       
       localStorage.setItem('moodle_pwa_user_id', user_id);
       setHasAccount(true);
       
-      const statusRes = await fetch(`/api/users/${user_id}/status`);
+      const statusRes = await fetch(apiUrl(`/api/users/${user_id}/status`));
       setAccountStatus(await statusRes.json());
       
       window.scrollTo(0,0);
@@ -160,7 +161,7 @@ export default function Registration() {
     if (!window.confirm('¿Seguro que deseas eliminarte de la base de datos y apagar las notificaciones?')) return;
     const userId = localStorage.getItem('moodle_pwa_user_id');
     try {
-      await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+      await fetch(apiUrl(`/api/users/${userId}`), { method: 'DELETE' });
       localStorage.removeItem('moodle_pwa_user_id');
       setHasAccount(false);
       setAccountStatus(null);
