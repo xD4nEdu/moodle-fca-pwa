@@ -5,9 +5,9 @@
   - [x] Install dependencies (`npm install`)
   - [x] Verify build works
 
-- [ ] **Task 2: Global Design System & Background**
-  - [ ] Add Glassmorphism utilities to `index.css`
-  - [ ] Implement `BackgroundGlow.jsx` with animated radial gradients
+- [x] **Task 2: Global Design System & Background**
+  - [x] Add Glassmorphism utilities to `index.css`
+  - [x] Implement `BackgroundGlow.jsx` with animated radial gradients
 
 - [ ] **Task 3: Glass UI Components**
   - [ ] Create `GlassCard.jsx`

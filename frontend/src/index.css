@@ -3,10 +3,34 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --glass-background: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --fca-orange: #F98005;
+    --fca-yellow: #FDB913;
+  }
+
   body {
-    @apply bg-slate-900 text-slate-50 antialiased min-h-screen relative;
+    @apply bg-[#0D0D0D] text-slate-100 antialiased min-h-screen relative overflow-x-hidden transition-colors duration-500;
     font-family: 'Outfit', sans-serif;
-    background-image: radial-gradient(circle at top right, #1e3a8a 0%, transparent 40%),
-                      radial-gradient(circle at bottom left, #312e81 0%, transparent 40%);
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+  }
+  
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-2xl border border-white/5 shadow-2xl;
+  }
+
+  .text-shadow-glow {
+    text-shadow: 0 0 20px rgba(249, 128, 5, 0.3);
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
