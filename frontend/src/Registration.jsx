@@ -1,22 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bell, Shield, Smartphone, ArrowRight, Trash2, GraduationCap, Eye, EyeOff, Loader2 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { apiUrl } from './api';
+import GlassCard from './components/GlassCard';
+import NotificationItem from './components/NotificationItem';
+import BackgroundGlow from './components/BackgroundGlow';
 
 // Helpers
-const isIOS = () => {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-         (navigator.userAgent.includes("Mac") && "ontouchend" in document);
-};
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+const isAndroid = () => /android/i.test(navigator.userAgent);
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-const isAndroid = () => {
-  return /android/i.test(navigator.userAgent);
-};
-
-const isStandalone = () => {
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-};
-
-// VAPID helper conversion
 function urlB64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
@@ -51,44 +46,13 @@ export default function Registration() {
     }
   }, []);
 
-  if (!standalone) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center relative">
-        <div className="absolute top-6 right-6"><ThemeToggle /></div>
-        <div className="bg-white/90 dark:bg-fca-charcoal/40 p-8 rounded-2xl border border-fca-gray/30 dark:border-fca-charcoal/80 max-w-sm w-full shadow-2xl backdrop-blur-md">
-          <div className="bg-fca-orange/10 dark:bg-fca-orange/20 text-fca-orange dark:text-fca-orangeLight p-4 rounded-full w-24 h-24 mx-auto flex items-center justify-center mb-6 shadow-inner">
-             {/* Bell Icon */}
-            <svg className="w-12 h-12 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-          </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-fca-orange to-fca-orangeLight dark:from-fca-orangeLight dark:to-fca-yellow bg-clip-text text-transparent mb-4">
-            Instala la App
-          </h1>
-          <p className="text-slate-600 dark:text-slate-300 mb-6 text-sm">
-            Para recibir notificaciones nativas de Moodle, debes instalar esta aplicación en tu pantalla de inicio.
-          </p>
-          
-          {isIOS() ? (
-             <div className="text-left bg-slate-100 dark:bg-fca-dark/50 p-4 rounded-xl text-sm text-slate-600 dark:text-slate-300 space-y-3 shadow-inner border border-transparent dark:border-fca-charcoal">
-                <p>1. Toca el botón <strong>Compartir</strong> <span className="inline-block px-2 py-1 bg-slate-200 dark:bg-fca-charcoal rounded mx-1 text-xs text-slate-700 dark:text-slate-200">↑</span> en la barra inferior de Safari.</p>
-                <p>2. Desliza hacia abajo y selecciona <strong>Añadir a la pantalla de inicio</strong> <span className="inline-block px-2 py-1 bg-slate-200 dark:bg-fca-charcoal rounded mx-1 text-xs text-slate-700 dark:text-slate-200">+</span>.</p>
-                <p>3. Abre la app desde tu pantalla de inicio para continuar.</p>
-             </div>
-          ) : isAndroid() ? (
-             <div className="text-left bg-slate-100 dark:bg-fca-dark/50 p-4 rounded-xl text-sm text-slate-600 dark:text-slate-300 space-y-3 shadow-inner border border-transparent dark:border-fca-charcoal">
-                <p>1. Toca el menú <strong>⋮</strong> en la esquina superior derecha de tu navegador.</p>
-                <p>2. Selecciona <strong>Añadir a la pantalla de inicio</strong> o <strong>Instalar Aplicación</strong>.</p>
-                <p>3. Abre la app instalada para continuar.</p>
-             </div>
-          ) : (
-             <div className="text-left bg-slate-100 dark:bg-fca-dark/50 p-4 rounded-xl text-sm text-slate-600 dark:text-slate-300 space-y-3 shadow-inner border border-transparent dark:border-fca-charcoal">
-                <p>1. Haz clic en el ícono de instalación en la barra de direcciones de tu navegador de PC (Chrome/Edge).</p>
-                <p>2. Haz clic en <strong>Instalar</strong> y abre la aplicación creada.</p>
-             </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -96,60 +60,39 @@ export default function Registration() {
     setMessage('');
     
     try {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        throw new Error('Tu navegador no soporta Notificaciones Web Push.');
-      }
-
-      // 1. Permiso Push
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) throw new Error('Navegador no soportado.');
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        throw new Error('Permisos de notificación denegados. Acéptalos para continuar.');
-      }
+      if (permission !== 'granted') throw new Error('Permisos de notificación denegados.');
       
-      // 2. Registrar en Backend
       const userRes = await fetch(apiUrl('/api/users'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ faculty, moodle_username: username, moodle_password: password })
       });
-      
-      if (!userRes.ok) {
-        const err = await userRes.json();
-        throw new Error(err.detail || 'Error al registrar usuario.');
-      }
-      
+      if (!userRes.ok) throw new Error((await userRes.json()).detail || 'Error al registrar.');
       const { user_id } = await userRes.json();
       
-      // 3. Obtener VAPID y Suscribir
       const vapidRes = await fetch(apiUrl('/api/vapid-public-key'));
       const { vapid_public_key } = await vapidRes.json();
-      
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlB64ToUint8Array(vapid_public_key)
       });
       
-      // 4. Enviar Sub al Backend
       const subRes = await fetch(apiUrl('/api/subscribe'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id, subscription })
       });
-
-      if (!subRes.ok) throw new Error('Error al vincular el dispositivo Push.');
+      if (!subRes.ok) throw new Error('Error al vincular el dispositivo.');
       
-      // 5. Probar Push
       await fetch(apiUrl(`/api/users/${user_id}/test_push`), { method: 'POST' });
-      
       localStorage.setItem('moodle_pwa_user_id', user_id);
       setHasAccount(true);
-      
       const statusRes = await fetch(apiUrl(`/api/users/${user_id}/status`));
       setAccountStatus(await statusRes.json());
-      
-      window.scrollTo(0,0);
-      
+      window.scrollTo(0, 0);
     } catch (err) {
       setMessage(`❌ ${err.message}`);
     } finally {
@@ -158,149 +101,252 @@ export default function Registration() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm('¿Seguro que deseas eliminarte de la base de datos y apagar las notificaciones?')) return;
+    if (!window.confirm('¿Seguro que deseas eliminar tu cuenta?')) return;
     const userId = localStorage.getItem('moodle_pwa_user_id');
     try {
       await fetch(apiUrl(`/api/users/${userId}`), { method: 'DELETE' });
       localStorage.removeItem('moodle_pwa_user_id');
       setHasAccount(false);
       setAccountStatus(null);
-    } catch (e) {
-      alert("Error al borrar cuenta");
-    }
+    } catch (e) { alert("Error al borrar cuenta"); }
   };
 
-  if (hasAccount) {
+  // View: Install PWA
+  if (!standalone) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 font-outfit relative">
-        <div className="absolute top-6 right-6"><ThemeToggle /></div>
-        <div className="bg-white/90 dark:bg-fca-charcoal/40 p-8 rounded-3xl border border-fca-gray/30 dark:border-fca-charcoal/80 max-w-sm w-full shadow-2xl backdrop-blur-md">
-          <div className="flex items-center justify-center mb-6">
-            <span className="text-5xl drop-shadow-lg">🎓</span>
-          </div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-fca-orange to-fca-yellow dark:from-fca-orangeLight dark:to-fca-yellow bg-clip-text text-transparent text-center mb-2">
-            Notificaciones Activas
-          </h2>
-          <p className="text-center text-slate-500 dark:text-slate-300 mb-6 text-sm">Todo está configurado y funcionando.</p>
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center relative selection:bg-fca-orange/30 overflow-hidden">
+        <BackgroundGlow />
+        <div className="absolute top-8 right-8"><ThemeToggle /></div>
+        
+        <GlassCard className="max-w-sm w-full">
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="bg-fca-orange/10 text-fca-orange p-5 rounded-full w-20 h-20 mx-auto flex items-center justify-center mb-6 shadow-glow"
+          >
+            <Smartphone className="w-10 h-10" />
+          </motion.div>
           
-          {accountStatus?.device_count > 1 && (
-            <div className="bg-fca-orange/10 border border-fca-orange/30 text-fca-orangeShadow dark:text-fca-orangeLight p-3 rounded-lg mb-6 text-xs text-center font-medium flex items-center justify-center gap-2">
-               <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-               Tienes {accountStatus.device_count} dispositivos vinculados.
-            </div>
-          )}
-
-          <div className="bg-slate-50 dark:bg-fca-dark/50 rounded-xl p-4 border border-fca-gray/30 dark:border-fca-charcoal/80 mb-6 shadow-inner">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-fca-orangeLight mb-3 border-b border-fca-gray/30 dark:border-fca-charcoal pb-2">Últimas Notificaciones</h3>
-            <div className="space-y-3">
-              {accountStatus && accountStatus.recent_notifications && accountStatus.recent_notifications.length > 0 ? (
-                accountStatus.recent_notifications.map((n, i) => (
-                  <div key={i} className="text-xs">
-                    <span className="text-fca-gray dark:text-fca-gray block mb-0.5">{n.date}</span>
-                    <span className="text-slate-700 dark:text-slate-200 line-clamp-2">{n.message}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-slate-400 dark:text-fca-gray text-center py-2">Sin actividad reciente.</p>
-              )}
-            </div>
-          </div>
+          <h1 className="text-3xl font-black bg-gradient-to-r from-fca-orange to-fca-yellow bg-clip-text text-transparent mb-4 tracking-tighter">
+            Instala la App
+          </h1>
+          <p className="text-slate-300 mb-8 text-sm font-medium leading-relaxed px-2">
+            Para recibir notificaciones nativas de Moodle, debes añadir esta web a tu pantalla de inicio.
+          </p>
           
-          <div className="text-center pt-2">
-            <button 
-              onClick={handleDeleteAccount}
-              className="text-xs text-red-500/80 dark:text-red-400/80 hover:text-red-600 dark:hover:text-red-400 underline decoration-red-500/30 dark:decoration-red-400/30 hover:decoration-red-600 dark:hover:decoration-red-400 transition-colors"
-            >
-              Desactivar notificaciones y borrar cuenta
-            </button>
+          <div className="text-left bg-black/30 p-5 rounded-2xl border border-white/5 space-y-4 shadow-inner">
+            {isIOS() ? (
+              <>
+                <div className="flex items-start gap-4">
+                  <span className="flex-shrink-0 bg-white/10 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold">1</span>
+                  <p className="text-sm text-slate-400">Toca <strong>Compartir</strong> ↑ en Safari.</p>
+                </div>
+                <div className="flex items-start gap-4">
+                  <span className="flex-shrink-0 bg-white/10 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold">2</span>
+                  <p className="text-sm text-slate-400">Selecciona <strong>Añadir a pantalla de inicio</strong> +.</p>
+                </div>
+              </>
+            ) : isAndroid() ? (
+              <div className="flex items-start gap-4">
+                <span className="flex-shrink-0 bg-white/10 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold">!</span>
+                <p className="text-sm text-slate-400">Toca el menú <strong>⋮</strong> y selecciona <strong>Instalar Aplicación</strong>.</p>
+              </div>
+            ) : (
+              <div className="flex items-start gap-4">
+                <span className="flex-shrink-0 bg-white/10 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold">1</span>
+                <p className="text-sm text-slate-400">Haz clic en el ícono de instalación en la barra de direcciones.</p>
+              </div>
+            )}
+            <div className="pt-2 border-t border-white/5 mt-4">
+              <p className="text-[10px] text-fca-gray text-center uppercase tracking-widest font-bold animate-pulse">Abre la app instalada para continuar</p>
+            </div>
           </div>
-        </div>
+        </GlassCard>
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 relative">
-      <div className="absolute top-6 right-6"><ThemeToggle /></div>
-      <div className="bg-white/90 dark:bg-fca-charcoal/40 p-8 rounded-3xl border border-fca-gray/30 dark:border-fca-charcoal/80 max-w-md w-full shadow-2xl backdrop-blur-xl">
-        <h1 className="text-3xl font-extrabold text-center mb-2 bg-gradient-to-r from-fca-orange to-fca-orangeLight dark:from-fca-orangeLight dark:to-fca-yellow bg-clip-text text-transparent tracking-tight drop-shadow-sm">Moodle Notifier</h1>
-        <p className="text-center text-slate-500 dark:text-slate-300 mb-8 text-sm">Vincula tu cuenta para avisos en tiempo real</p>
+  // View: Active Dashboard
+  if (hasAccount) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 font-outfit relative selection:bg-fca-orange/30 overflow-hidden">
+        <BackgroundGlow />
+        <div className="absolute top-8 right-8 z-50"><ThemeToggle /></div>
         
-        {message && (
-          <div className="bg-slate-100 dark:bg-fca-dark/80 text-sm p-4 rounded-xl mb-6 border border-fca-gray/30 dark:border-fca-charcoal text-slate-700 dark:text-slate-200 shadow-inner">
-            {message}
+        <GlassCard className="max-w-md w-full !p-8">
+          <div className="flex items-center justify-center mb-10 relative">
+             <motion.div
+               animate={{ y: [0, -8, 0] }}
+               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+               className="bg-gradient-to-br from-fca-orange/20 to-fca-yellow/10 p-6 rounded-[2rem] shadow-glow border border-fca-orange/20"
+             >
+               <GraduationCap className="w-14 h-14 text-fca-orange shadow-lg" />
+             </motion.div>
+             <div className="absolute -bottom-3 bg-[#0D0D0D] px-4 py-1.5 rounded-full border border-white/10 flex items-center gap-2 shadow-xl">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">FCA LIVE Sync</span>
+             </div>
           </div>
-        )}
+          
+          <h2 className="text-3xl font-black bg-gradient-to-r from-fca-orange to-fca-yellow bg-clip-text text-transparent text-center mb-2 tracking-tighter">
+            Notificaciones Activas
+          </h2>
+          <p className="text-center text-slate-400 mb-8 text-sm font-medium">Recuperando avisos en tiempo real</p>
+          
+          <div className="space-y-6">
+            {accountStatus?.device_count > 1 && (
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-fca-orange/5 border border-fca-orange/10 p-4 rounded-2xl flex items-center gap-4 group"
+              >
+                 <div className="bg-white/5 p-2.5 rounded-xl group-hover:bg-fca-orange/20 transition-colors">
+                   <Smartphone className="w-5 h-5 text-fca-orange" />
+                 </div>
+                 <p className="text-xs font-bold text-slate-300">
+                   <span className="text-fca-orange">{accountStatus.device_count}</span> Dispositivos vinculados con éxito.
+                 </p>
+              </motion.div>
+            )}
+
+            <div>
+              <div className="flex items-center justify-between mb-4 px-2">
+                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <Bell className="w-3.5 h-3.5 text-fca-orange" />
+                  Últimos Avisos
+                </h3>
+                {accountStatus?.recent_notifications?.length > 0 && (
+                  <span className="text-[10px] font-bold text-fca-orange/60">{accountStatus.recent_notifications.length} recientes</span>
+                )}
+              </div>
+              
+              <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="space-y-3 max-h-[45vh] overflow-y-auto pr-2 scrollbar-hide pb-4"
+              >
+                {accountStatus?.recent_notifications?.length > 0 ? (
+                  accountStatus.recent_notifications.map((n, i) => (
+                    <NotificationItem 
+                      key={i} 
+                      date={n.date} 
+                      message={n.message} 
+                      isNew={i === 0} 
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-16 bg-white/5 rounded-[2rem] border border-dashed border-white/10 opacity-30 mt-2">
+                    <Bell className="w-10 h-10 mx-auto mb-4" />
+                    <p className="text-xs font-black tracking-widest uppercase">Todo en calma</p>
+                  </div>
+                )}
+              </motion.div>
+            </div>
+          </div>
+          
+          <div className="text-center pt-6 mt-4 border-t border-white/5 opacity-40 hover:opacity-100 transition-opacity">
+            <button 
+              onClick={handleDeleteAccount}
+              className="flex items-center justify-center gap-2 w-full text-[10px] font-bold text-red-400 uppercase tracking-widest hover:text-red-500 transition-colors py-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Desvincular cuenta y borrar datos
+            </button>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
+
+  // View: Registration Form
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 relative selection:bg-fca-orange/30 overflow-hidden">
+      <BackgroundGlow />
+      <div className="absolute top-8 right-8 z-50"><ThemeToggle /></div>
+      
+      <GlassCard className="max-w-md w-full !p-10">
+        <motion.h1 
+          initial={{ y: -10 }}
+          animate={{ y: 0 }}
+          className="text-4xl font-black text-center mb-2 bg-gradient-to-r from-fca-orange to-fca-yellow bg-clip-text text-transparent tracking-tighter"
+        >
+          Moodle Notifier
+        </motion.h1>
+        <p className="text-center text-slate-400 mb-10 text-sm font-medium">Vincula tu cuenta para avisos en tiempo real</p>
         
-        <form onSubmit={handleRegister} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-200 mb-1.5 ml-1">Facultad</label>
+        <AnimatePresence>
+          {message && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="bg-red-500/10 border border-red-500/20 text-red-200 text-xs p-4 rounded-2xl mb-8 flex items-center gap-3"
+            >
+              <Shield className="w-4 h-4 shrink-0" />
+              {message}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        <form onSubmit={handleRegister} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-2">Facultad</label>
             <select 
               value={faculty} 
               onChange={(e) => setFaculty(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-fca-dark/60 border border-slate-300 dark:border-fca-charcoal text-slate-800 dark:text-slate-100 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-fca-orange focus:border-fca-orange focus:outline-none transition-all shadow-inner"
+              className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-fca-orange focus:border-transparent focus:outline-none transition-all appearance-none cursor-pointer"
             >
-              <option value="contaduria">Contaduría</option>
-              <option value="administracion">Administración</option>
-              <option value="informatica">Informática</option>
+              <option value="contaduria" className="bg-[#0D0D0D]">Contaduría</option>
+              <option value="administracion" className="bg-[#0D0D0D]">Administración</option>
+              <option value="informatica" className="bg-[#0D0D0D]">Informática</option>
             </select>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-200 mb-1.5 ml-1">No. de Cuenta</label>
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-2">No. de Cuenta</label>
             <input 
-              type="text" 
-              required
-              value={username}
+              type="text" required value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Ej. 317..."
-              className="w-full bg-slate-50 dark:bg-fca-dark/60 border border-slate-300 dark:border-fca-charcoal text-slate-800 dark:text-slate-100 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-fca-orange focus:border-fca-orange focus:outline-none transition-all shadow-inner"
+              className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-fca-orange focus:border-transparent focus:outline-none transition-all placeholder:text-slate-600"
             />
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-200 mb-1.5 ml-1">Contraseña Moodle</label>
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-2">Contraseña Moodle</label>
             <div className="relative">
               <input 
-                type={showPassword ? "text" : "password"} 
-                required
-                value={password}
+                type={showPassword ? "text" : "password"} required value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-50 dark:bg-fca-dark/60 border border-slate-300 dark:border-fca-charcoal text-slate-800 dark:text-slate-100 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-fca-orange focus:border-fca-orange focus:outline-none transition-all shadow-inner pr-12"
+                className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-fca-orange focus:border-transparent focus:outline-none transition-all placeholder:text-slate-600 pr-14"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500 dark:text-fca-gray hover:text-fca-orange shadow-none transition-colors"
+                className="absolute inset-y-0 right-0 flex items-center pr-5 text-slate-500 hover:text-fca-orange transition-colors"
               >
-                {showPassword ? (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.543 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                )}
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
           
-          <button 
-            type="submit" 
-            disabled={loading}
-            className={`w-full font-bold py-4 rounded-xl transition-all shadow-lg mt-4 ${
+          <motion.button 
+            type="submit" disabled={loading}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className={`w-full font-black py-5 rounded-2xl transition-all shadow-xl mt-6 flex items-center justify-center gap-3 ${
               loading 
-                ? 'bg-fca-orange/20 dark:bg-fca-orange/20 text-fca-orange/50 dark:text-fca-orange/50 cursor-not-allowed' 
-                : 'bg-gradient-to-r from-fca-orange to-fca-orangeLight hover:from-fca-orangeShadow hover:to-fca-orange dark:from-fca-orange dark:to-fca-orangeLight dark:hover:from-fca-orangeShadow dark:hover:to-fca-orange text-white hover:-translate-y-0.5 hover:shadow-fca-orange/30 active:translate-y-0'
+                ? 'bg-white/5 text-white/20 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-fca-orange to-fca-yellow text-white shadow-fca-orange/20'
             }`}
           >
-            {loading ? 'Activando Sistema Push...' : 'Activar Notificaciones'}
-          </button>
+            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Activar Notificaciones'}
+            {!loading && <ArrowRight className="w-5 h-5" />}
+          </motion.button>
         </form>
-      </div>
+      </GlassCard>
     </div>
   );
 }
