@@ -16,7 +16,7 @@ const BackgroundGlow = () => {
           repeat: Infinity,
           ease: "linear"
         }}
-        className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-fca-orange/15 blur-[120px]"
+        className="absolute top-[-20%] right-[-10%] w-[80%] h-[80%] rounded-full bg-fca-orange/30 blur-[150px]"
       />
       
       {/* Yellow Glow */}
@@ -31,7 +31,7 @@ const BackgroundGlow = () => {
           repeat: Infinity,
           ease: "linear"
         }}
-        className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-fca-yellow/10 blur-[100px]"
+        className="absolute bottom-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-fca-yellow/20 blur-[130px]"
       />
       
       {/* Center Deepness */}
