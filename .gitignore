@@ -14,6 +14,7 @@ frontend/node_modules/
 frontend/dist/
 .env.termux
 headers_leak.txt
+.worktrees/
 *.log
 
 # Cargas estáticas temporales
