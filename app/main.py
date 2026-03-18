@@ -240,7 +240,8 @@ async def get_user_status(user_id: int, db: Session = Depends(get_db)):
             pass
             
     recent_records = db.query(NotificationHistory).filter(NotificationHistory.user_id == user_id).order_by(NotificationHistory.created_at.desc()).limit(5).all()
-    recent = [{"message": r.message, "date": r.created_at.strftime("%d/%m %H:%M")} for r in recent_records]
+    from datetime import timedelta
+    recent = [{"message": r.message, "date": (r.created_at - timedelta(hours=6)).strftime("%H:%M %p | %d/%m")} for r in recent_records]
     
     return {
         "is_active": user.is_active,

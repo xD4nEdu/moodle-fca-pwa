@@ -19,11 +19,13 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+    @apply bg-white/5 backdrop-blur-lg border border-white/10 shadow-2xl;
+    will-change: backdrop-filter, transform;
   }
   
   .glass-dark {
-    @apply bg-black/40 backdrop-blur-2xl border border-white/5 shadow-2xl;
+    @apply bg-black/40 backdrop-blur-xl border border-white/5 shadow-2xl;
+    will-change: backdrop-filter, transform;
   }
 
   .text-shadow-glow {
