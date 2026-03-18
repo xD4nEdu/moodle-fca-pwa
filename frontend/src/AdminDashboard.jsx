@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ThemeToggle from './ThemeToggle';
-import { apiUrl } from './api';
+import { apiUrl, adminHeaders } from './api';
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -10,13 +10,28 @@ export default function AdminDashboard() {
   const [pin, setPin] = useState('');
 
   const fetchUsers = async () => {
+    // Definir headers directamente para evitar problemas de importación
+    const headers = { 
+      "X-API-Key": "1531",
+      "Authorization": "Bearer 1531",
+      "Content-Type": "application/json"
+    };
+    
+    console.log("[DEBUG] Fetching users with headers:", headers);
+    console.log("[DEBUG] Target URL:", apiUrl('/api/users'));
+
     try {
-      const res = await fetch(apiUrl('/api/users'));
-      if (!res.ok) throw new Error('Error al obtener carga de usuarios');
+      const res = await fetch(apiUrl('/api/users'), { headers });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("[DEBUG] Error response:", errText);
+        throw new Error('Error al obtener carga de usuarios');
+      }
       const data = await res.json();
       setUsers(data.users);
       setError(null);
     } catch (e) {
+      console.error("[DEBUG] Fetch failed:", e);
       setError(e.message);
     } finally {
       setLoading(false);
@@ -28,8 +43,9 @@ export default function AdminDashboard() {
   }, [isAuthenticated]);
 
   const handleToggle = async (userId) => {
+    const headers = { "X-API-Key": "1531", "Authorization": "Bearer 1531" };
     try {
-      const res = await fetch(apiUrl(`/api/users/${userId}/toggle`), { method: 'POST' });
+      const res = await fetch(apiUrl(`/api/users/${userId}/toggle`), { method: 'POST', headers });
       if (res.ok) fetchUsers();
     } catch (e) {
       alert("Error: " + e.message);
@@ -38,8 +54,9 @@ export default function AdminDashboard() {
 
   const handleDelete = async (userId) => {
     if (!window.confirm("¿Seguro que deseas eliminar este usuario?")) return;
+    const headers = { "X-API-Key": "1531", "Authorization": "Bearer 1531" };
     try {
-      const res = await fetch(apiUrl(`/api/users/${userId}`), { method: 'DELETE' });
+      const res = await fetch(apiUrl(`/api/users/${userId}`), { method: 'DELETE', headers });
       if (res.ok) fetchUsers();
     } catch (e) {
       alert("Error: " + e.message);
@@ -47,8 +64,9 @@ export default function AdminDashboard() {
   };
 
   const handleTestPush = async (userId) => {
+    const headers = { "X-API-Key": "1531", "Authorization": "Bearer 1531" };
     try {
-      const res = await fetch(apiUrl(`/api/users/${userId}/test_push`), { method: 'POST' });
+      const res = await fetch(apiUrl(`/api/users/${userId}/test_push`), { method: 'POST', headers });
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.detail || 'Error en Push');

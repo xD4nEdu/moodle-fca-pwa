@@ -34,3 +34,19 @@ def encrypt_password(plain_password: str) -> str:
 def decrypt_password(encrypted_password: str) -> str:
     """Desencripta la contraseña para enviarla a token.php si el token caduca."""
     return cipher_suite.decrypt(encrypted_password.encode()).decode()
+
+def encrypt_token(token: str) -> str:
+    """Cifra el token de Moodle antes de guardarlo en DB."""
+    if not token:
+        return token
+    return cipher_suite.encrypt(token.encode()).decode()
+
+def decrypt_token(encrypted_token: str) -> str:
+    """Descifra el token. Si falla, asume texto plano (migración transparente)."""
+    if not encrypted_token:
+        return encrypted_token
+    try:
+        return cipher_suite.decrypt(encrypted_token.encode()).decode()
+    except Exception:
+        return encrypted_token  # Token viejo en texto plano
+

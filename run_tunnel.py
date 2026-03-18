@@ -1,14 +1,20 @@
 import subprocess
 import re
 import sys
-import threading
-import time
+import os
 
 def run():
-    print("Iniciando tu servidor en internet de forma segura...")
-    # Usar 127.0.0.1 y protocolo http2 previene freeze sockets en Win/Cloudflare
+    print('Iniciando tu servidor en internet de forma segura...')
+    # Prioridad: variable de entorno, argumento CLI, o default
+    tunnel_target = os.environ.get('TUNNEL_TARGET', sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8000')
+    
+    # Detectar binario correcto según el sistema
+    cmd = 'cloudflared' if os.name != 'nt' else 'cloudflared.exe'
+    
+    print(f'Usando binario: {cmd} hacia {tunnel_target}')
+    
     p = subprocess.Popen(
-        [r"cloudflared.exe", "tunnel", "--protocol", "http2", "--url", "http://192.168.0.111:8000"],
+        [cmd, 'tunnel', '--protocol', 'http2', '--url', tunnel_target],
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
         text=True,
@@ -17,26 +23,33 @@ def run():
     )
     
     url = None
+    print('Esperando al link público...')
     
-    for line in iter(p.stderr.readline, ''):
-        match = re.search(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', line)
-        if match:
-            url = match.group(0)
-            break
+    try:
+        # Cloudflare suele escribir el link en stderr
+        while True:
+            line = p.stderr.readline()
+            if not line:
+                break
             
-    if url:
-        with open('mi_link_publico.txt', 'w', encoding='utf-8') as f:
-            f.write(url)
+            # Mostrar la línea para que PM2 la capture
+            sys.stdout.write(line)
+            sys.stdout.flush()
             
-        print("\n" + "="*50)
-        print("✅ ¡LISTO! Tu link público ha sido generado.")
-        print("Abre esta dirección desde el navegador (Chrome) de tu celular:")
-        print(f"\n👉 {url} 👈\n")
-        print("="*50)
-    else:
-        print("Hubo un problema detectando el link. Intenta de nuevo.")
+            match = re.search(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', line)
+            if match:
+                url = match.group(0)
+                # Guardar el link público en un archivo para referencia rápida
+                with open(os.path.expanduser('~/moodle-bot/mi_link_publico.txt'), 'w', encoding='utf-8') as f:
+                    f.write(url)
+                print(f'\n✅ LINK DETECTADO: {url}\n')
+                # No hacemos break para que el proceso siga vivo y el túnel abierto
+    except KeyboardInterrupt:
+        p.terminate()
+    except Exception as e:
+        print(f'Error en el túnel: {e}')
+    finally:
+        p.wait()
 
-    p.wait()
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     run()

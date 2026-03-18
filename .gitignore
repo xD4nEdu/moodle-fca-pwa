@@ -12,7 +12,8 @@ mi_link_publico.txt
 # Node / Vite
 frontend/node_modules/
 frontend/dist/
-frontend/.env
+.env.termux
+headers_leak.txt
 *.log
 
 # Cargas estáticas temporales

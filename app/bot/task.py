@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db, SessionLocal
 from app.db.models import ClientUser, ProcessedItem, MutedCourse
 from app.services.moodle import MoodleClient
-from app.core.security import decrypt_password
+from app.core.security import decrypt_password, encrypt_token, decrypt_token
 import json
 import os
 from pywebpush import webpush, WebPushException
@@ -39,19 +39,21 @@ def clean_html(raw_html: str) -> str:
 async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
     async with semaphore:
         db: Session = SessionLocal()
+        mensajes_pendientes = []
+        push_sub = None
+        is_first_sync = True
         try:
             user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
             if not user:
                 return
 
-            mensajes_pendientes = []
-
             password = decrypt_password(user.moodle_password)
-            moodle = MoodleClient(user.faculty, user.moodle_username, password, user.moodle_token)
+            decrypted_token = decrypt_token(user.moodle_token)
+            moodle = MoodleClient(user.faculty, user.moodle_username, password, decrypted_token)
             token = await moodle.get_token()
             
-            if token != user.moodle_token:
-                user.moodle_token = token
+            if token != decrypted_token:
+                user.moodle_token = encrypt_token(token)
                 db.commit()
             
             site_info = await moodle.get_site_info()

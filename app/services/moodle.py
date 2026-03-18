@@ -39,7 +39,7 @@ class MoodleClient:
             "service": "moodle_mobile_app"
         }
         
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
             async with session.post(url, data=params) as response:
                 if response.status != 200:
                     raise Exception(f"Error al conectar con Moodle: {response.status}")
@@ -68,11 +68,21 @@ class MoodleClient:
         if params:
             data.update(params)
             
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
             # Enviamos como form-urlencoded para máxima compatibilidad
             async with session.post(url, data=data) as response:
                 result = await response.json()
                 if isinstance(result, dict) and "exception" in result:
+                    # Si el token expiró, reautenticarse una vez y reintentar
+                    if result.get("errorcode") == "invalidtoken" and self.password:
+                        self.token = None
+                        await self.get_token()
+                        data["wstoken"] = self.token
+                        async with session.post(url, data=data) as retry_resp:
+                            result = await retry_resp.json()
+                            if isinstance(result, dict) and "exception" in result:
+                                raise Exception(f"Moodle WS API (retry): {result.get('message')}")
+                            return result
                     raise Exception(f"Moodle WS API Exception: {result.get('message')}")
                 return result
 

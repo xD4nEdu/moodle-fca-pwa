@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 from app.db.database import get_db, init_db, SessionLocal
 from app.db.models import ClientUser, MutedCourse
-from app.core.security import encrypt_password, decrypt_password
+from app.core.security import encrypt_password, decrypt_password, encrypt_token, decrypt_token
 from app.bot.task import background_moodle_task
 from app.services.moodle import FACULTIES, MoodleClient
 from pydantic import BaseModel
@@ -25,13 +25,41 @@ VAPID_CLAIMS = {
 app = FastAPI(title="Bot Administrador FCA - PWA API")
 
 from fastapi.middleware.cors import CORSMiddleware
+# Limpiar espacios en blanco de las orígenes
+CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "https://moodle-fca-pwa.vercel.app").split(",")]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://moodle-fca-pwa.vercel.app", "http://localhost:5173", "http://localhost:3000"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Autenticación mínima para endpoints admin
+API_KEY = os.environ.get("API_KEY", "1531")
+
+def verify_api_key(request: Request):
+    """Protege endpoints admin con un header X-API-Key o Authorization."""
+    headers = {k.lower(): v for k, v in request.headers.items()}
+    origin = headers.get("origin")
+    method = request.method
+    
+    # Intentar obtener de X-API-Key o de Authorization: Bearer ...
+    key = headers.get("x-api-key")
+    if not key and "authorization" in headers:
+        auth = headers.get("authorization", "")
+        if auth.startswith("Bearer "):
+            key = auth.replace("Bearer ", "")
+            
+    # Log exhaustivo de todas las cabeceras recibidas
+    print(f"--- NUEVA PETICIÓN {method} ---")
+    print(f"ORIGIN: {origin}")
+    print(f"HEADERS RECIBIDOS: {json.dumps(headers, indent=2)}")
+    print(f"KEY DETECTADA: {key} (Esperada: {API_KEY})")
+    print(f"-------------------------------")
+    
+    if key != API_KEY:
+        raise HTTPException(status_code=401, detail=f"Auth fallida. Key recibida: {key}")
 
 @app.on_event("startup")
 async def on_startup():
@@ -50,7 +78,8 @@ class PushSubscribe(BaseModel):
 
 # API Endpoints
 @app.get("/api/users")
-async def get_users(db: Session = Depends(get_db)):
+async def get_users(request: Request, db: Session = Depends(get_db)):
+    verify_api_key(request)
     users = db.query(ClientUser).all()
     result = []
     for u in users:
@@ -89,7 +118,8 @@ async def add_user(user_data: UserCreate, db: Session = Depends(get_db)):
     return {"status": "success", "user_id": new_user.id}
 
 @app.post("/api/users/{user_id}/toggle")
-async def toggle_user(user_id: int, db: Session = Depends(get_db)):
+async def toggle_user(user_id: int, request: Request, db: Session = Depends(get_db)):
+    verify_api_key(request)
     user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -98,7 +128,8 @@ async def toggle_user(user_id: int, db: Session = Depends(get_db)):
     return {"status": "success", "is_active": user.is_active}
 
 @app.delete("/api/users/{user_id}")
-async def delete_user(user_id: int, db: Session = Depends(get_db)):
+async def delete_user(user_id: int, request: Request, db: Session = Depends(get_db)):
+    verify_api_key(request)
     user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -117,19 +148,20 @@ async def view_courses(user_id: int, db: Session = Depends(get_db)):
     
     try:
         password = decrypt_password(user.moodle_password)
-        moodle = MoodleClient(user.faculty, user.moodle_username, password, user.moodle_token)
+        decrypted_token = decrypt_token(user.moodle_token)
+        moodle = MoodleClient(user.faculty, user.moodle_username, password, decrypted_token)
         site_info = await moodle.get_site_info()
         userid = site_info["userid"]
         courses = await moodle.get_user_courses(userid)
         
         # Guardar token nuevo si cambió
         token = await moodle.get_token()
-        if token != user.moodle_token:
-            user.moodle_token = token
+        if token != decrypted_token:
+            user.moodle_token = encrypt_token(token)
             db.commit()
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error al consultar Moodle. Intente de nuevo.")
 
     result_courses = []
     for c in courses:
@@ -217,7 +249,8 @@ async def get_user_status(user_id: int, db: Session = Depends(get_db)):
     }
 
 @app.post("/api/users/{user_id}/test_push")
-async def test_push(user_id: int, db: Session = Depends(get_db)):
+async def test_push(user_id: int, request: Request, db: Session = Depends(get_db)):
+    verify_api_key(request)
     from pywebpush import webpush, WebPushException
     user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
     if not user or not user.push_subscription:
