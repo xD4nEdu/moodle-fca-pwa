@@ -95,15 +95,19 @@ async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
                             
                             if not is_first_sync:
                                 icon, type_name = get_item_format(mod_type)
-                                text = f"*{course['fullname']}*\n"
-                                text += f"📂 Apartado: {section_name}\n"
-                                text += f"{icon} Nuevo recurso: {module['name']} ({type_name})\n"
-                                text += f"Subido a las: {datetime.now().strftime('%H:%M')}\n" 
+                                subject_short = course['fullname'].split(' - ')[0]
+                                summary = f"*{subject_short}* - {module['name']}"
+                                
+                                # Formato estructurado para la BD
+                                details = f"📂 Apartado: {section_name}\n"
+                                details += f"{icon} Tipo: {type_name}\n"
+                                details += f"⏰ Avisado: {datetime.now().strftime('%H:%M %p')}\n"
                                 
                                 if mod_type == "assign" and mod_id in assignments_map:
                                     due_date = datetime.fromtimestamp(assignments_map[mod_id]).strftime('%d/%m/%Y %H:%M')
-                                    text += f"\n⏳ *VENCE:* {due_date}\n"
-                                    
+                                    details += f"⏳ *VENCE:* {due_date}\n"
+                                
+                                text = f"{summary} [DETAILS] {details}"
                                 mensajes_pendientes.append(text)
                                 
             # 2. Verificar Mensajes Directos (Conversaciones)
@@ -122,7 +126,8 @@ async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
                                         break
                                 
                                 msg_text = clean_html(msg.get("text", ""))
-                                text = f"💬 *Moodle Mensaje de {sender_name}*\n\n{msg_text}"
+                                summary = f"💬 Mensaje de {sender_name}"
+                                text = f"{summary} [DETAILS] {msg_text}"
                                 mensajes_pendientes.append(text)
                                 
             # 3. Verificar Correos / Notificaciones (Eventos)
@@ -145,10 +150,9 @@ async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
                             if len(full_msg) > 300:
                                 full_msg = full_msg[:300] + "..."
                             
-                            text = f"🔔 *Notificación de Moodle*\n\n"
-                            text += f"📌 *{subject}*\n\n"
-                            if full_msg and full_msg != subject:
-                                text += f"📩 {full_msg}\n"
+                            summary = f"🔔 {subject}"
+                            details = full_msg if full_msg and full_msg != subject else "Sin detalles adicionales."
+                            text = f"{summary} [DETAILS] {details}"
                             
                             mensajes_pendientes.append(text)
     
@@ -177,9 +181,13 @@ async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
                 
                 for msg in mensajes_pendientes:
                     db_hist.add(NotificationHistory(user_id=user_id, message=msg))
+                    
+                    # El cuerpo de la notificación push solo lleva el resumen
+                    push_body = msg.split(" [DETAILS] ")[0] if " [DETAILS] " in msg else msg
+                    
                     payload = json.dumps({
                         "title": "Aviso de Moodle 🎓",
-                        "body": msg,
+                        "body": push_body,
                         "url": "/"
                     })
                     
