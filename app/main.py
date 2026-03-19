@@ -8,7 +8,7 @@ import json
 from dotenv import load_dotenv
 
 from app.db.database import get_db, init_db, SessionLocal
-from app.db.models import ClientUser, MutedCourse
+from app.db.models import ClientUser, MutedCourse, UserDevice, NotificationHistory
 from app.core.security import encrypt_password, decrypt_password, encrypt_token, decrypt_token
 from app.bot.task import background_moodle_task
 from app.services.moodle import FACULTIES, MoodleClient
@@ -75,6 +75,8 @@ class UserCreate(BaseModel):
 class PushSubscribe(BaseModel):
     user_id: int
     subscription: dict
+    device_name: str
+    replace_existing: bool = False
 
 # API Endpoints
 @app.get("/api/users")
@@ -88,7 +90,7 @@ async def get_users(request: Request, db: Session = Depends(get_db)):
             "faculty": u.faculty,
             "moodle_username": u.moodle_username,
             "is_active": u.is_active,
-            "has_push": bool(u.push_subscription)
+            "device_count": len(u.devices)
         })
     return {"users": result}
 
@@ -103,7 +105,11 @@ async def add_user(user_data: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(ClientUser).filter(ClientUser.moodle_username == user_data.moodle_username).first()
     if existing:
         if decrypt_password(existing.moodle_password) == user_data.moodle_password:
-            return {"status": "success", "user_id": existing.id}
+            return {
+                "status": "exists", 
+                "user_id": existing.id, 
+                "device_count": len(existing.devices)
+            }
         else:
             raise HTTPException(status_code=400, detail="El usuario ya existe con otra contraseña")
 
@@ -197,28 +203,50 @@ async def subscribe_push(sub_data: PushSubscribe, db: Session = Depends(get_db))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    subs = []
-    if user.push_subscription:
-        try:
-            parsed = json.loads(user.push_subscription)
-            if isinstance(parsed, list):
-                subs = parsed
-            elif isinstance(parsed, dict):
-                subs = [parsed]
-        except:
-            pass
-            
-    # Check if this exact endpoint already exists
-    already_exists = False
-    for s in subs:
-        if s.get("endpoint") == sub_data.subscription.get("endpoint"):
-            already_exists = True
-            break
-            
-    if not already_exists:
-        subs.append(sub_data.subscription)
+    # Manejar reemplazo de dispositivos si se solicita
+    if sub_data.replace_existing:
+        db.query(UserDevice).filter(UserDevice.user_id == user.id).delete()
+        db.commit()
+
+    # Verificar si este dispositivo ya existe por endpoint
+    existing_device = db.query(UserDevice).filter_by(
+        user_id=user.id, 
+        push_subscription=json.dumps(sub_data.subscription)
+    ).first()
+
+    if not existing_device:
+        new_device = UserDevice(
+            user_id=user.id,
+            device_name=sub_data.device_name,
+            push_subscription=json.dumps(sub_data.subscription)
+        )
+        db.add(new_device)
+        db.commit()
+    else:
+        existing_device.last_used = datetime.utcnow()
+        db.commit()
         
-    user.push_subscription = json.dumps(subs)
+    return {"status": "success"}
+
+@app.get("/api/users/{user_id}/devices")
+async def get_user_devices(user_id: int, db: Session = Depends(get_db)):
+    devices = db.query(UserDevice).filter(UserDevice.user_id == user_id).all()
+    return {
+        "devices": [
+            {
+                "id": d.id, 
+                "name": d.device_name, 
+                "last_used": (d.last_used - timedelta(hours=6)).strftime("%d/%m/%Y %H:%M")
+            } for d in devices
+        ]
+    }
+
+@app.delete("/api/users/{user_id}/devices/{device_id}")
+async def delete_user_device(user_id: int, device_id: int, db: Session = Depends(get_db)):
+    device = db.query(UserDevice).filter_by(user_id=user_id, id=device_id).first()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    db.delete(device)
     db.commit()
     return {"status": "success"}
 
@@ -229,23 +257,13 @@ async def get_user_status(user_id: int, db: Session = Depends(get_db)):
     user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
-    device_count = 0
-    if user.push_subscription:
-        try:
-            parsed = json.loads(user.push_subscription)
-            if isinstance(parsed, list): device_count = len(parsed)
-            elif isinstance(parsed, dict): device_count = 1
-        except:
-            pass
             
     recent_records = db.query(NotificationHistory).filter(NotificationHistory.user_id == user_id).order_by(NotificationHistory.created_at.desc()).limit(5).all()
-    from datetime import timedelta
     recent = [{"message": r.message, "date": (r.created_at - timedelta(hours=6)).strftime("%H:%M %p | %d/%m")} for r in recent_records]
     
     return {
         "is_active": user.is_active,
-        "device_count": device_count,
+        "device_count": len(user.devices),
         "recent_notifications": recent
     }
 
@@ -254,16 +272,10 @@ async def test_push(user_id: int, request: Request, db: Session = Depends(get_db
     verify_api_key(request)
     from pywebpush import webpush, WebPushException
     user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
-    if not user or not user.push_subscription:
-        raise HTTPException(status_code=400, detail="Usuario sin suscripción Push")
+    if not user or not user.devices:
+        raise HTTPException(status_code=400, detail="Usuario sin dispositivos vinculados")
         
-    subs = []
-    if user.push_subscription:
-        try:
-            parsed = json.loads(user.push_subscription)
-            subs = parsed if isinstance(parsed, list) else [parsed]
-        except:
-            pass
+    subs = [json.loads(d.push_subscription) for d in user.devices]
             
     if not subs:
         raise HTTPException(status_code=400, detail="Usuario sin suscripción Push")

@@ -175,44 +175,47 @@ async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
         finally:
             db.close()
 
-        # Solo si el guardado SQL fue exitoso (no hubo errores ni warnings de red), 
-        # enviamos los mensajes pendientes (Anti-Spam).
-        if not is_first_sync and push_sub and VAPID_PRIVATE_KEY and mensajes_pendientes:
-            db_hist = SessionLocal()
-            from app.db.models import NotificationHistory
+        # Solo si el guardado SQL fue exitoso, enviamos los mensajes pendientes.
+        if not is_first_sync and VAPID_PRIVATE_KEY and mensajes_pendientes:
+            db_notif = SessionLocal()
             try:
-                parsed = json.loads(push_sub)
-                subs = parsed if isinstance(parsed, list) else [parsed]
-                
-                for msg in mensajes_pendientes:
-                    db_hist.add(NotificationHistory(user_id=user_id, message=msg))
-                    
-                    # El cuerpo de la notificación push solo lleva el resumen
-                    push_body = msg.split(" [DETAILS] ")[0] if " [DETAILS] " in msg else msg
-                    
-                    payload = json.dumps({
-                        "title": "Aviso de Moodle 🎓",
-                        "body": push_body,
-                        "url": "/"
-                    })
-                    
-                    for sub_info in subs:
+                user = db_notif.query(ClientUser).filter(ClientUser.id == user_id).first()
+                if user and user.devices:
+                    for text in mensajes_pendientes:
                         try:
-                            webpush(
-                                subscription_info=sub_info,
-                                data=payload,
-                                vapid_private_key=VAPID_PRIVATE_KEY,
-                                vapid_claims=VAPID_CLAIMS
-                            )
+                            # Log de notificación
+                            db_notif.add(NotificationHistory(user_id=user.id, message=text))
+                            db_notif.commit()
+                            
+                            summary = text.split(' [DETAILS] ')[0].strip()
+                            payload = json.dumps({
+                                "title": "Moodle FCA 🎓",
+                                "body": summary,
+                                "url": "/"
+                            })
+                            
+                            # Notificar a TODOS los dispositivos
+                            for device in user.devices:
+                                try:
+                                    sub_info = json.loads(device.push_subscription)
+                                    webpush(
+                                        subscription_info=sub_info,
+                                        data=payload,
+                                        vapid_private_key=VAPID_PRIVATE_KEY,
+                                        vapid_claims={"sub": "mailto:botadmin@fca.unam.mx"}
+                                    )
+                                    logger.info(f"Notificación enviada a {device.device_name}")
+                                except WebPushException as ex:
+                                    if "410" in str(ex) or "404" in str(ex):
+                                        logger.warning(f"Dispositivo {device.id} expirado. Boirrando...")
+                                        db_notif.delete(device)
+                                        db_notif.commit()
                         except Exception as e_push:
-                            logger.error(f"WebPush Error en dispositivo de usuario {user_id}: {e_push}")
-                    
-                    await asyncio.sleep(1)
-                db_hist.commit()
+                            logger.error(f"Error enviando mensaje a {user_id}: {e_push}")
             except Exception as e:
                 logger.error(f"Error en flujo de Notificaciones para usuario {user_id}: {e}")
             finally:
-                db_hist.close()
+                db_notif.close()
 
 
 async def background_moodle_task():
