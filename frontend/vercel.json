@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/api/(.*)", "destination": "https://decorative-equally-freeze-ultra.trycloudflare.com/api/$1" },
     { "source": "/(.*)", "destination": "/" }
   ]
 }
