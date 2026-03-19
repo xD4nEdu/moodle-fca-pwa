@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
 from app.db.database import get_db, SessionLocal
 from app.db.models import ClientUser, ProcessedItem, MutedCourse
@@ -98,14 +98,19 @@ async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
                                 subject_short = course['fullname'].split(' - ')[0]
                                 summary = f"*{subject_short}* - {module['name']}"
                                 
+                                # Ajuste a Hora CDMX (GMT-6)
+                                cdmx_now = datetime.now(timezone(timedelta(hours=-6)))
+                                
                                 # Formato estructurado para la BD
                                 details = f"📂 Apartado: {section_name}\n"
                                 details += f"{icon} Tipo: {type_name}\n"
-                                details += f"⏰ Avisado: {datetime.now().strftime('%H:%M %p')}\n"
+                                details += f"⏰ Avisado: {cdmx_now.strftime('%H:%M %p')}\n"
                                 
                                 if mod_type == "assign" and mod_id in assignments_map:
-                                    due_date = datetime.fromtimestamp(assignments_map[mod_id]).strftime('%d/%m/%Y %H:%M')
-                                    details += f"⏳ *VENCE:* {due_date}\n"
+                                    # Moodle timestamp (UTC) a CDMX (GMT-6)
+                                    due_utc = datetime.fromtimestamp(assignments_map[mod_id], tz=timezone.utc)
+                                    due_cdmx = due_utc.astimezone(timezone(timedelta(hours=-6)))
+                                    details += f"⏳ *VENCE:* {due_cdmx.strftime('%d/%m/%Y %H:%M')}\n"
                                 
                                 text = f"{summary} [DETAILS] {details}"
                                 mensajes_pendientes.append(text)
