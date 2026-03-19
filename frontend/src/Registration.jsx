@@ -224,6 +224,22 @@ export default function Registration() {
     } catch (e) { alert("Error al borrar cuenta"); }
   };
 
+  const handleReadNotification = async (notifId) => {
+    try {
+      await fetch(apiUrl(`/api/notifications/${notifId}/read`), { method: 'POST' });
+    } catch (e) { console.error(e); }
+  };
+
+  const handleDeleteNotification = async (notifId) => {
+    try {
+      const res = await fetch(apiUrl(`/api/notifications/${notifId}`), { method: 'DELETE' });
+      if (res.ok) {
+        const userId = localStorage.getItem('moodle_pwa_user_id');
+        loadStatus(userId);
+      }
+    } catch (e) { console.error(e); }
+  };
+
   const handleDeleteDevice = async (deviceId) => {
     if (!window.confirm('¿Desvincular este dispositivo? Dejarás de recibir avisos aquí.')) return;
     const userId = localStorage.getItem('moodle_pwa_user_id');
@@ -308,30 +324,30 @@ export default function Registration() {
                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                className="bg-gradient-to-br from-fca-orange/20 to-fca-yellow/10 p-6 rounded-[2rem] shadow-glow border border-fca-orange/20"
              >
-               <GraduationCap className="w-14 h-14 text-fca-orange shadow-lg" />
+                <GraduationCap className="w-14 h-14 text-fca-orange drop-shadow-[0_0_15px_rgba(255,152,0,0.5)]" />
              </motion.div>
-             <div className="absolute -bottom-3 bg-[#0D0D0D] px-4 py-1.5 rounded-full border border-white/10 flex items-center gap-2 shadow-xl">
+             <div className="absolute -bottom-3 bg-white dark:bg-[#0D0D0D] px-4 py-1.5 rounded-full border border-black/5 dark:border-white/10 flex items-center gap-2 shadow-xl">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">FCA LIVE Sync</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">FCA LIVE Sync</span>
              </div>
           </div>
           
           <h2 className="text-3xl font-black bg-gradient-to-r from-fca-orange to-fca-yellow bg-clip-text text-transparent text-center mb-2 tracking-tighter">
             Notificaciones Activas
           </h2>
-          <p className="text-center text-slate-400 mb-8 text-sm font-medium">Recuperando avisos en tiempo real</p>
+          <p className="text-center text-slate-500 dark:text-slate-400 mb-8 text-sm font-medium">Recuperando avisos en tiempo real</p>
           
           <div className="space-y-6">
             {accountStatus?.device_count > 1 && (
-              <motion.div 
+                 <motion.div 
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="bg-fca-orange/5 border border-fca-orange/10 p-4 rounded-2xl flex items-center gap-4 group"
               >
-                 <div className="bg-white/5 p-2.5 rounded-xl group-hover:bg-fca-orange/20 transition-colors">
+                 <div className="bg-black/5 dark:bg-white/5 p-2.5 rounded-xl group-hover:bg-fca-orange/20 transition-colors">
                    <Smartphone className="w-5 h-5 text-fca-orange" />
                  </div>
-                 <p className="text-xs font-bold text-slate-300">
+                 <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
                    <span className="text-fca-orange">{accountStatus.device_count}</span> Dispositivos vinculados con éxito.
                  </p>
               </motion.div>
@@ -355,12 +371,15 @@ export default function Registration() {
                 className="space-y-3 max-h-[45vh] overflow-y-auto pr-2 scrollbar-hide pb-4"
               >
                 {accountStatus?.recent_notifications?.length > 0 ? (
-                  accountStatus.recent_notifications.map((n, i) => (
+                  accountStatus.recent_notifications.map((n) => (
                     <NotificationItem 
-                      key={i} 
+                      key={n.id}
+                      id={n.id}
                       date={n.date} 
                       message={n.message} 
-                      isNew={i === 0} 
+                      isRead={n.is_read}
+                      onRead={handleReadNotification}
+                      onDelete={handleDeleteNotification}
                     />
                   ))
                 ) : (
@@ -381,14 +400,14 @@ export default function Registration() {
               </h3>
               <div className="space-y-2">
                 {devices.map((dev) => (
-                  <div key={dev.id} className="bg-white/5 border border-white/10 p-3 rounded-2xl flex items-center justify-between group hover:bg-white/10 transition-all">
+                  <div key={dev.id} className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 p-3 rounded-2xl flex items-center justify-between group hover:bg-black/10 transition-all">
                     <div className="flex flex-col">
-                      <span className="text-xs font-black text-slate-200">{dev.name}</span>
+                      <span className="text-xs font-black text-slate-800 dark:text-slate-200">{dev.name}</span>
                       <span className="text-[10px] text-slate-500 font-bold">Visto: {dev.last_used}</span>
                     </div>
                     <button 
                       onClick={() => handleDeleteDevice(dev.id)}
-                      className="p-2 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                      className="p-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

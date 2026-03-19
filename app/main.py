@@ -251,6 +251,21 @@ async def delete_user_device(user_id: int, device_id: int, db: Session = Depends
     return {"status": "success"}
 
 from app.db.models import NotificationHistory
+@app.delete("/api/notifications/{notification_id}")
+def delete_notification(notification_id: int, db: Session = Depends(get_db)):
+    notif = db.query(NotificationHistory).filter(NotificationHistory.id == notification_id).first()
+    if notif:
+        db.delete(notif)
+        db.commit()
+    return {"status": "deleted"}
+
+@app.post("/api/notifications/{notification_id}/read")
+def mark_notif_read(notification_id: int, db: Session = Depends(get_db)):
+    notif = db.query(NotificationHistory).filter(NotificationHistory.id == notification_id).first()
+    if notif:
+        notif.is_read = True
+        db.commit()
+    return {"status": "ok"}
 
 @app.get("/api/users/{user_id}/status")
 async def get_user_status(user_id: int, db: Session = Depends(get_db)):
@@ -258,8 +273,13 @@ async def get_user_status(user_id: int, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
             
-    recent_records = db.query(NotificationHistory).filter(NotificationHistory.user_id == user_id).order_by(NotificationHistory.created_at.desc()).limit(5).all()
-    recent = [{"message": r.message, "date": (r.created_at - timedelta(hours=6)).strftime("%H:%M %p | %d/%m")} for r in recent_records]
+    recent_records = db.query(NotificationHistory).filter(NotificationHistory.user_id == user_id).order_by(NotificationHistory.created_at.desc()).limit(10).all()
+    recent = [{
+        "id": r.id, 
+        "message": r.message, 
+        "is_read": r.is_read,
+        "date": (r.created_at - timedelta(hours=6)).strftime("%H:%M %p | %d/%m")
+    } for r in recent_records]
     
     return {
         "is_active": user.is_active,

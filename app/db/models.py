@@ -54,8 +54,8 @@ class MutedCourse(Base):
 
 class NotificationHistory(Base):
     __tablename__ = 'notification_history'
-    
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('clients.id'), nullable=False)
-    message = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey('clients.id'))
+    message = Column(String)
+    is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
