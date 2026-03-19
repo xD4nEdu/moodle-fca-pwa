@@ -20,70 +20,50 @@ const NotificationItem = ({ date, message, isNew = false }) => {
         isOpen ? 'bg-white/10 ring-1 ring-white/20' : 'bg-white/5 hover:bg-white/10 border border-white/5 shadow-lg shadow-black/20'
       } ${isNew ? 'ring-1 ring-fca-orange/40' : ''}`}
     >
-      <button
+      <div 
         onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        className="w-full text-left p-5 pr-14 focus:outline-none"
+        className="bg-[#0D0D0D]/90 backdrop-blur-md rounded-[1.4rem] p-4 cursor-pointer overflow-hidden"
       >
-        <div className="flex flex-col gap-2 overflow-hidden">
-          {/* Tag and Date */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-[9px] font-bold tracking-widest uppercase opacity-50 text-slate-400">
-              <Calendar className="w-2.5 h-2.5" />
-              <span>{date}</span>
-            </div>
-            {isNew && (
-              <span className="bg-fca-orange text-white px-2 py-0.5 rounded-full text-[8px] font-bold shadow-sm shadow-fca-orange/20 uppercase tracking-tighter">
-                NUEVA
-              </span>
-            )}
+        <div className="flex items-center gap-4">
+          <div className={`p-2.5 rounded-xl ${isNew ? 'bg-fca-orange/20 text-fca-orange' : 'bg-white/5 text-slate-400'} group-hover:scale-110 transition-transform`}>
+            <Info className="w-5 h-5" />
           </div>
-
-          {/* Main Summary */}
-          <p className={`text-[15px] leading-snug font-medium text-slate-100 transition-all duration-300 ${
-            isOpen ? '' : 'line-clamp-2'
-          }`}>
-            {summaryPart}
-          </p>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-0.5">
+              <span className="text-[10px] font-black tracking-widest text-slate-500 uppercase">{date}</span>
+              {isNew && <span className="bg-fca-orange text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter">Nuevo</span>}
+            </div>
+            {/* Solo resumen en colapsado */}
+            <p className={`text-sm font-bold leading-tight line-clamp-2 ${isNew ? 'text-slate-100' : 'text-slate-300'}`}>
+              {summaryPart}
+            </p>
+          </div>
         </div>
 
-        {/* Action Icon */}
-        <div className="absolute top-1/2 -translate-y-1/2 right-4 text-white/20 group-hover:text-white/50 transition-colors">
-          <motion.div
-            animate={{ rotate: isOpen ? 90 : 0, scale: isOpen ? 1.2 : 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          >
-            <ChevronRight className={`w-5 h-5 ${isOpen ? 'text-fca-orange' : ''}`} />
-          </motion.div>
-        </div>
-      </button>
-
-      {/* Expanded Content */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 200, damping: 25 }}
-            className="overflow-hidden"
-          >
-            <div className="px-5 pb-5 pt-0">
-              <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 space-y-3">
-                <div className="flex items-start gap-3">
-                  <Info className="w-4 h-4 text-fca-orange shrink-0 mt-0.5" />
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-fca-orange/80 uppercase tracking-widest">Detalles del Aviso</p>
-                    <p className="text-sm leading-relaxed text-slate-200/90 whitespace-pre-line antialiased">
-                      {detailsPart || summaryPart}
-                    </p>
-                  </div>
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0, marginTop: 0 }}
+              animate={{ height: 'auto', opacity: 1, marginTop: 16 }}
+              exit={{ height: 0, opacity: 0, marginTop: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="pt-4 border-t border-white/5">
+                <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                   <div className="flex items-center gap-2 mb-3">
+                      <div className="w-1.5 h-1.5 bg-fca-orange rounded-full animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-fca-orange/80">Detalles del Aviso</span>
+                   </div>
+                   <p className="text-xs text-slate-400 font-medium leading-relaxed whitespace-pre-wrap">
+                     {detailsPart || summaryPart}
+                   </p>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 };
