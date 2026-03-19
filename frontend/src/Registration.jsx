@@ -26,13 +26,77 @@ function urlB64ToUint8Array(base64String) {
 export default function Registration() {
   const [standalone, setStandalone] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [faculty, setFaculty] = useState('contaduria');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
   const [hasAccount, setHasAccount] = useState(false);
   const [accountStatus, setAccountStatus] = useState(null);
+
+  // Sub-component for the form to isolate state and prevent lag while typing
+  const RegistrationForm = React.memo(({ onRegister, loading }) => {
+    const [faculty, setFaculty] = useState('contaduria');
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+
+    return (
+      <form onSubmit={(e) => onRegister(e, { faculty, username, password })} className="space-y-6">
+        <div className="space-y-2">
+          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-2">Facultad</label>
+          <select 
+            value={faculty} 
+            onChange={(e) => setFaculty(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-fca-orange focus:border-transparent focus:outline-none transition-all appearance-none cursor-pointer"
+          >
+            <option value="contaduria" className="bg-[#0D0D0D]">Contaduría</option>
+            <option value="administracion" className="bg-[#0D0D0D]">Administración</option>
+            <option value="informatica" className="bg-[#0D0D0D]">Informática</option>
+          </select>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-2">No. de Cuenta</label>
+          <input 
+            type="text" required value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Ej. 317..."
+            className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-fca-orange focus:border-transparent focus:outline-none transition-all placeholder:text-slate-600"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-2">Contraseña Moodle</label>
+          <div className="relative">
+            <input 
+              type={showPassword ? "text" : "password"} required value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-fca-orange focus:border-transparent focus:outline-none transition-all placeholder:text-slate-600 pr-14"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 flex items-center pr-5 text-slate-500 hover:text-fca-orange transition-colors"
+            >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+        
+        <motion.button 
+          type="submit" disabled={loading}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`w-full font-black py-5 rounded-2xl transition-all shadow-xl mt-6 flex items-center justify-center gap-3 ${
+            loading 
+              ? 'bg-white/5 text-white/20 cursor-not-allowed' 
+              : 'bg-gradient-to-r from-fca-orange to-fca-yellow text-white shadow-fca-orange/20'
+          }`}
+        >
+          {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Activar Notificaciones'}
+          {!loading && <ArrowRight className="w-5 h-5" />}
+        </motion.button>
+      </form>
+    );
+  });
   
   useEffect(() => {
     setStandalone(isStandalone());
@@ -54,8 +118,9 @@ export default function Registration() {
     }
   };
 
-  const handleRegister = async (e) => {
+  const handleRegister = async (e, formDetails) => {
     e.preventDefault();
+    const { faculty, username, password } = formDetails;
     setLoading(true);
     setMessage('');
     
@@ -289,63 +354,7 @@ export default function Registration() {
           )}
         </AnimatePresence>
         
-        <form onSubmit={handleRegister} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-2">Facultad</label>
-            <select 
-              value={faculty} 
-              onChange={(e) => setFaculty(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-fca-orange focus:border-transparent focus:outline-none transition-all appearance-none cursor-pointer"
-            >
-              <option value="contaduria" className="bg-[#0D0D0D]">Contaduría</option>
-              <option value="administracion" className="bg-[#0D0D0D]">Administración</option>
-              <option value="informatica" className="bg-[#0D0D0D]">Informática</option>
-            </select>
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-2">No. de Cuenta</label>
-            <input 
-              type="text" required value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Ej. 317..."
-              className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-fca-orange focus:border-transparent focus:outline-none transition-all placeholder:text-slate-600"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-2">Contraseña Moodle</label>
-            <div className="relative">
-              <input 
-                type={showPassword ? "text" : "password"} required value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-fca-orange focus:border-transparent focus:outline-none transition-all placeholder:text-slate-600 pr-14"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-5 text-slate-500 hover:text-fca-orange transition-colors"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-          </div>
-          
-          <motion.button 
-            type="submit" disabled={loading}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`w-full font-black py-5 rounded-2xl transition-all shadow-xl mt-6 flex items-center justify-center gap-3 ${
-              loading 
-                ? 'bg-white/5 text-white/20 cursor-not-allowed' 
-                : 'bg-gradient-to-r from-fca-orange to-fca-yellow text-white shadow-fca-orange/20'
-            }`}
-          >
-            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Activar Notificaciones'}
-            {!loading && <ArrowRight className="w-5 h-5" />}
-          </motion.button>
-        </form>
+        <RegistrationForm onRegister={handleRegister} loading={loading} />
       </GlassCard>
     </div>
   );
