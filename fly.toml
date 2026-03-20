@@ -1,5 +1,5 @@
 # 1. Nombre de la App (Fly.io te la asignará o la pondrás tú)
-app = "moodle-fca-bot-xD4n"
+app = "moodle-fca-pwa"
 primary_region = "qro" # Monterrey/Guanajuato/Dallas/Miami/Ect.
 
 [http_service]
