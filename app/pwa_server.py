@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from cryptography.fernet import Fernet
 import json
 import os
+import asyncio
 import logging
 
 # --- LOGS ---
@@ -25,13 +26,11 @@ VAPID_CLAIMS = {"sub": "mailto:botadmin@fca.unam.mx"}
 cipher_suite = Fernet(SECRET_ENCRYPTION_KEY.encode())
 
 def encrypt_password(plain: str) -> str: return cipher_suite.encrypt(plain.encode()).decode()
-
 def decrypt_password(enc: str) -> str:
     if not enc: return ""
     try:
         return cipher_suite.decrypt(enc.encode()).decode()
     except Exception:
-        # Si falla el descifrado, es que es una contraseña vieja en texto plano
         return enc
 
 # --- DB & MODELS ---
@@ -44,6 +43,7 @@ class ClientUser(Base):
     faculty = Column(String)
     moodle_username = Column(String, unique=True, index=True)
     moodle_password = Column(String)
+    moodle_token = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     devices = relationship("UserDevice", back_populates="user", cascade="all, delete-orphan")
 
@@ -60,11 +60,26 @@ class NotificationHistory(Base):
     __tablename__ = "notification_history"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, index=True)
-    title = Column(String)
+    title = Column(String, nullable=True)
     body = Column(String)
-    url = Column(String)
+    url = Column(String, nullable=True)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class ProcessedItem(Base):
+    __tablename__ = "processed_items"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True)
+    course_id = Column(Integer, index=True)
+    item_type = Column(String)
+    item_id = Column(Integer)
+    processed_at = Column(DateTime, default=datetime.utcnow)
+
+class MutedCourse(Base):
+    __tablename__ = "muted_courses"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True)
+    course_id = Column(Integer, index=True)
 
 engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -91,6 +106,13 @@ class PushSubscribe(BaseModel):
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+@app.on_event("startup")
+async def startup_event():
+    # Arrancar el motor de búsqueda en segundo plano
+    logger.info("⚡ ARRANCANDO MOTOR DE BÚSQUEDA MOODLE...")
+    from app.bot.task import background_moodle_task
+    asyncio.create_task(background_moodle_task())
+
 def verify_api_key(request: Request):
     key = request.headers.get("X-API-Key") or request.headers.get("Authorization")
     if key and key.startswith("Bearer "): key = key.split(" ")[1]
@@ -99,7 +121,7 @@ def verify_api_key(request: Request):
 # --- PUBLIC ROUTES ---
 @app.get("/")
 def home():
-    return {"status": "online", "message": "FCA PWA Bot DEFINITIVE is running on Fly.io!", "version": "2.2.1-RESILIENT"}
+    return {"status": "online", "message": "FCA PWA Bot TOTAL (Motor Activo) is running on Fly.io!", "version": "2.2.2-ROCKET"}
 
 @app.get("/api/faculties")
 def get_facs():
@@ -113,9 +135,7 @@ def get_vapid():
 async def register(data: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(ClientUser).filter(ClientUser.moodle_username == data.moodle_username).first()
     if existing:
-        # Fallback de descifrado resiliente
         if decrypt_password(existing.moodle_password) == data.moodle_password:
-            # Actualizar al nuevo cifrado si era plano
             if existing.moodle_password == data.moodle_password:
                 existing.moodle_password = encrypt_password(data.moodle_password)
                 db.commit()
@@ -192,10 +212,8 @@ async def toggle(user_id: int, request: Request, db: Session = Depends(get_db)):
         return {"status": "success", "new_state": u.is_active}
     return {"status": "error"}
 
-# SOPORTE PARA BORRAR VIA GET O POST TAMBIEN (POR SI ACASO)
 @app.api_route("/api/users/{user_id}", methods=["GET", "POST", "DELETE"])
 async def delete_user(user_id: int, request: Request, db: Session = Depends(get_db)):
-    # Solo verificar API Key si es para listar o borrar
     if request.method in ["POST", "DELETE"] or (request.method == "GET" and request.query_params.get("action") == "delete"):
         verify_api_key(request)
     
