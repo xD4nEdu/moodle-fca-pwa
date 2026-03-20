@@ -1,68 +1,34 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { Trash2, Info, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Info, CheckCircle2 } from 'lucide-react';
 
-const NotificationItem = ({ id, date, message, isRead = false, onRead, onDelete }) => {
+const NotificationItem = ({ id, date, message, isRead = false, onRead }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showNew, setShowNew] = useState(!isRead);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Motion values para el swipe
-  const x = useMotionValue(0);
-  const opacityValue = useTransform(x, [-100, -80, 0], [0, 1, 1]);
-  const bgOpacity = useTransform(x, [-100, 0], [1, 0]);
-
-  // Parsear el mensaje
+  // Parsear el mensaje estructurado
   const hasDetails = message.includes('[DETAILS]');
   const summaryPart = hasDetails ? message.split('[DETAILS]')[0].trim() : message;
   const detailsPart = hasDetails ? message.split('[DETAILS]')[1].trim() : null;
 
   const handleOpen = () => {
-    // Solo abre si no se está deslizando (tolerancia de 5px)
-    if (Math.abs(x.get()) < 5) {
-      setIsOpen(!isOpen);
-      if (showNew && onRead) {
-        onRead(id);
-        setShowNew(false);
-      }
-    }
-  };
-
-  const handleDragEnd = (_, info) => {
-    if (info.offset.x < -80) {
-      setIsDeleting(true);
-      onDelete(id);
+    setIsOpen(!isOpen);
+    if (showNew && onRead) {
+      onRead(id);
+      setShowNew(false);
     }
   };
 
   return (
-    <div className="relative overflow-hidden mb-3 rounded-[2rem]">
-      {/* Fondo de borrado (rojo) que se revela al hacer swipe */}
-      <motion.div 
-        style={{ opacity: bgOpacity }}
-        className="absolute inset-0 bg-red-500 flex items-center justify-end px-8 rounded-[2rem]"
-      >
-        <Trash2 className="w-6 h-6 text-white animate-pulse" />
-      </motion.div>
-
+    <div className="relative mb-3 rounded-[1.8rem] overflow-hidden">
       <motion.div
-        drag="x"
-        dragConstraints={{ left: -100, right: 0 }}
-        dragElastic={0.05}
-        onDragEnd={handleDragEnd}
-        style={{ x }}
         layout
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ 
-          opacity: isDeleting ? 0 : 1, 
-          scale: isDeleting ? 0.9 : 1,
-          x: isDeleting ? -200 : 0 
-        }}
-        transition={{ type: "spring", damping: 20, stiffness: 300 }}
-        className={`relative z-10 group transition-all duration-300 ${
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`relative z-10 transition-all duration-300 ${
           isOpen 
-            ? 'bg-black/5 dark:bg-white/10 ring-1 ring-black/10 dark:ring-white/20' 
-            : 'bg-white/90 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-black/5 dark:border-white/5 shadow-md dark:shadow-xl'
+            ? 'bg-black/5 dark:bg-white/12 ring-2 ring-fca-orange/20 dark:ring-white/20' 
+            : 'bg-white/80 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-black/5 dark:border-white/5 shadow-md dark:shadow-lg'
         } ${showNew ? 'ring-2 ring-fca-orange/40' : ''}`}
       >
         <div className="p-5 cursor-pointer select-none" onClick={handleOpen}>
@@ -77,12 +43,12 @@ const NotificationItem = ({ id, date, message, isRead = false, onRead, onDelete 
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[10px] font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase">{date}</span>
+                <span className="text-[10px] font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase italic opacity-70">{date}</span>
                 {showNew && (
-                  <span className="bg-fca-orange text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase shadow-fca-orange/20">Nuevo</span>
+                  <span className="bg-fca-orange text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase shadow-glow-sm">Nuevo</span>
                 )}
               </div>
-              <p className={`text-sm font-bold leading-tight transition-colors ${
+              <p className={`text-[13px] font-bold leading-tight transition-colors ${
                 showNew 
                   ? 'text-slate-900 dark:text-slate-100' 
                   : 'text-slate-700 dark:text-slate-400'
@@ -100,8 +66,8 @@ const NotificationItem = ({ id, date, message, isRead = false, onRead, onDelete 
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="pt-5 border-t border-black/5 dark:border-white/5 space-y-4">
-                  <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-5 border border-black/5 dark:border-white/5">
+                <div className="pt-5 border-t border-black/5 dark:border-white/10">
+                  <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-5 border border-black/5 dark:border-white/5 shadow-inner">
                      <div className="flex items-center gap-2 mb-3">
                         <div className="w-1.5 h-1.5 bg-fca-orange rounded-full" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-fca-orange/80">Detalles del Aviso</span>
@@ -110,16 +76,10 @@ const NotificationItem = ({ id, date, message, isRead = false, onRead, onDelete 
                        {detailsPart || summaryPart}
                      </p>
                   </div>
-
-                  {/* Botón de respaldo por si el swipe no es cómodo */}
-                  <motion.button 
-                    whileTap={{ scale: 0.95 }}
-                    onClick={(e) => { e.stopPropagation(); setIsDeleting(true); onDelete(id); }}
-                    className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors border border-red-500/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Eliminar este aviso
-                  </motion.button>
+                  <div className="mt-4 flex justify-between items-center px-1">
+                     <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter italic">Este aviso caducará pronto</span>
+                     <CheckCircle2 className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
+                  </div>
                 </div>
               </motion.div>
             )}

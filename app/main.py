@@ -272,8 +272,14 @@ async def get_user_status(user_id: int, db: Session = Depends(get_db)):
     user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-            
-    recent_records = db.query(NotificationHistory).filter(NotificationHistory.user_id == user_id).order_by(NotificationHistory.created_at.desc()).limit(10).all()
+
+    # Solo avisos de las últimas 24 horas
+    cutoff = datetime.utcnow() - timedelta(hours=24)
+    recent_records = db.query(NotificationHistory).filter(
+        NotificationHistory.user_id == user_id,
+        NotificationHistory.created_at >= cutoff
+    ).order_by(NotificationHistory.created_at.desc()).all()
+
     recent = [{
         "id": r.id, 
         "message": r.message, 
