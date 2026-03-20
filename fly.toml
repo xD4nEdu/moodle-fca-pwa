@@ -1,23 +1,23 @@
-# 1. Nombre de la App (Fly.io te la asignará o la pondrás tú)
-app = "moodle-fca-bot-xD4n"
-primary_region = "qro" # Monterrey/Guanajuato/Dallas/Miami/Ect.
+# fly.toml app configuration file generated for moodle-fca-pwa on 2026-03-20T22:26:00Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'moodle-fca-pwa'
+primary_region = 'dfw'
+
+[build]
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = false # ¡MUY IMPORTANTE! Evita que el bot se duerma
+  auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 1
+  min_machines_running = 0
+  processes = ['app']
 
 [[vm]]
-  memory = "256mb"
-  cpu_kind = "shared"
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
-
-# 2. Base de Datos PERSISTENTE (Para que tus usuarios no se borren)
-[mounts]
-  source = "moodle_data"
-  destination = "/data"
-
-[env]
-  DATABASE_URL = "sqlite:////data/bot_fca.db"
+  memory_mb = 256
