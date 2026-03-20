@@ -45,10 +45,10 @@ export default function AdminDashboard() {
   const handleToggle = async (userId) => {
     const headers = { "X-API-Key": "1531", "Authorization": "Bearer 1531" };
     try {
-      const res = await fetch(apiUrl(`/api/users/${userId}/toggle`), { method: 'POST', headers });
+      const res = await fetch(apiUrl(`/api/users/${userId}/toggle`), { method: 'GET', headers });
       if (res.ok) fetchUsers();
     } catch (e) {
-      alert("Error: " + e.message);
+      alert("Error de red: " + e.message);
     }
   };
 
@@ -66,14 +66,13 @@ export default function AdminDashboard() {
   const handleTestPush = async (userId) => {
     const headers = { "X-API-Key": "1531", "Authorization": "Bearer 1531" };
     try {
-      const res = await fetch(apiUrl(`/api/users/${userId}/test_push`), { method: 'POST', headers });
+      const res = await fetch(apiUrl(`/api/users/${userId}/test_push`), { method: 'GET', headers });
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.detail || 'Error en Push');
+        throw new Error('Error al mandar la prueba Push');
       }
-      alert('¡Notificación enviada!');
+      alert('¡Notificación de prueba lanzada!');
     } catch (e) {
-      alert("Error: " + e.message);
+      alert("Error de red: " + e.message);
     }
   };
 

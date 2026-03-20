@@ -303,20 +303,28 @@ async def get_user_status(user_id: int, db: Session = Depends(get_db)):
         "recent_notifications": recent
     }
 
-@app.post("/api/users/{user_id}/test_push")
+@app.get("/api/users/{user_id}/toggle")
+async def toggle_user_active(user_id: int, request: Request, db: Session = Depends(get_db)):
+    verify_api_key(request)
+    user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
+    if not user:
+        return {"status": "error", "detail": "Usuario no encontrado"}
+    
+    user.is_active = not user.is_active
+    db.commit()
+    return {"status": "success", "new_state": user.is_active}
+
+@app.get("/api/users/{user_id}/test_push")
 async def test_push(user_id: int, request: Request, db: Session = Depends(get_db)):
     verify_api_key(request)
     from pywebpush import webpush, WebPushException
     user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
     if not user or not user.devices:
-        raise HTTPException(status_code=400, detail="Usuario sin dispositivos vinculados")
+        return {"status": "error", "detail": "Usuario sin dispositivos"}
         
     subs = [json.loads(d.push_subscription) for d in user.devices]
-            
-    if not subs:
-        raise HTTPException(status_code=400, detail="Usuario sin suscripción Push")
-        
     errors = []
+    
     for sub in subs:
         try:
             payload = json.dumps({
@@ -330,12 +338,10 @@ async def test_push(user_id: int, request: Request, db: Session = Depends(get_db
                 vapid_private_key=VAPID_PRIVATE_KEY,
                 vapid_claims=VAPID_CLAIMS
             )
-        except WebPushException as ex:
+        except Exception as ex:
             errors.append(str(ex))
             
-    if len(errors) == len(subs) and len(subs) > 0:
-        raise HTTPException(status_code=500, detail=f"Falló WebPush en todos los dispositivos: {errors[0]}")
-    return {"status": "success"}
+    return {"status": "success", "errors": errors}
 
 # PWA Static Files Integration
 frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
