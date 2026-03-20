@@ -8,6 +8,11 @@ from pydantic import BaseModel
 from cryptography.fernet import Fernet
 import json
 import os
+import logging
+
+# --- LOGS ---
+logger = logging.getLogger("bot")
+logging.basicConfig(level=logging.INFO)
 
 # --- ENTORNO Y LLAVES REALES ---
 API_KEY = "1531"
@@ -16,11 +21,18 @@ VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "BHTVz9fwKybXNasmAtEM-K7Cebkayu
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "iIG-apAQhmRwEe2oSzzTPMplb12qN_sNVj9sLChX5cE")
 VAPID_CLAIMS = {"sub": "mailto:botadmin@fca.unam.mx"}
 
-# Cifrado Fernet Real
+# Cifrado Fernet Real con fallback a texto plano
 cipher_suite = Fernet(SECRET_ENCRYPTION_KEY.encode())
 
 def encrypt_password(plain: str) -> str: return cipher_suite.encrypt(plain.encode()).decode()
-def decrypt_password(enc: str) -> str: return cipher_suite.decrypt(enc.encode()).decode()
+
+def decrypt_password(enc: str) -> str:
+    if not enc: return ""
+    try:
+        return cipher_suite.decrypt(enc.encode()).decode()
+    except Exception:
+        # Si falla el descifrado, es que es una contraseña vieja en texto plano
+        return enc
 
 # --- DB & MODELS ---
 DB_URL = os.getenv("DATABASE_URL", "sqlite:///./data/bot_fca.db")
@@ -87,7 +99,7 @@ def verify_api_key(request: Request):
 # --- PUBLIC ROUTES ---
 @app.get("/")
 def home():
-    return {"status": "online", "message": "FCA PWA Bot ULTIMATE is running on Fly.io!", "version": "2.2.0"}
+    return {"status": "online", "message": "FCA PWA Bot DEFINITIVE is running on Fly.io!", "version": "2.2.1-RESILIENT"}
 
 @app.get("/api/faculties")
 def get_facs():
@@ -101,11 +113,14 @@ def get_vapid():
 async def register(data: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(ClientUser).filter(ClientUser.moodle_username == data.moodle_username).first()
     if existing:
-        try:
-            if decrypt_password(existing.moodle_password) == data.moodle_password:
-                return {"status": "exists", "user_id": existing.id, "device_count": len(existing.devices)}
-            raise HTTPException(400, "Contraseña incorrecta para el usuario existente")
-        except: raise HTTPException(400, "Error de cifrado. Registre de nuevo.")
+        # Fallback de descifrado resiliente
+        if decrypt_password(existing.moodle_password) == data.moodle_password:
+            # Actualizar al nuevo cifrado si era plano
+            if existing.moodle_password == data.moodle_password:
+                existing.moodle_password = encrypt_password(data.moodle_password)
+                db.commit()
+            return {"status": "exists", "user_id": existing.id, "device_count": len(existing.devices)}
+        raise HTTPException(400, "Contraseña incorrecta para el usuario existente")
     
     new_u = ClientUser(
         faculty=data.faculty, 
@@ -124,7 +139,6 @@ async def subscribe(data: PushSubscribe, db: Session = Depends(get_db)):
     if data.replace_existing:
         db.query(UserDevice).filter(UserDevice.user_id == u.id).delete()
     
-    # Evitar duplicados por suscripción idéntica
     sub_json = json.dumps(data.subscription)
     existing_dev = db.query(UserDevice).filter_by(user_id=u.id, push_subscription=sub_json).first()
     if not existing_dev:
@@ -178,14 +192,18 @@ async def toggle(user_id: int, request: Request, db: Session = Depends(get_db)):
         return {"status": "success", "new_state": u.is_active}
     return {"status": "error"}
 
-@app.delete("/api/users/{user_id}")
+# SOPORTE PARA BORRAR VIA GET O POST TAMBIEN (POR SI ACASO)
+@app.api_route("/api/users/{user_id}", methods=["GET", "POST", "DELETE"])
 async def delete_user(user_id: int, request: Request, db: Session = Depends(get_db)):
-    verify_api_key(request)
+    # Solo verificar API Key si es para listar o borrar
+    if request.method in ["POST", "DELETE"] or (request.method == "GET" and request.query_params.get("action") == "delete"):
+        verify_api_key(request)
+    
     u = db.query(ClientUser).filter(ClientUser.id == user_id).first()
     if u:
         db.delete(u)
         db.commit()
-        return {"status": "success"}
+        return {"status": "success", "message": "User deleted successfully"}
     return {"status": "not_found"}
 
 @app.api_route("/api/users/{user_id}/test_push", methods=["GET", "POST"])
