@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://shipments-oval-mayor-her.trycloudflare.com/api/$1" },
+    { "source": "/api/(.*)", "destination": "https://traveller-lodge-courier-necessity.trycloudflare.com/api/$1" },
     { "source": "/(.*)", "destination": "/" }
   ]
 }

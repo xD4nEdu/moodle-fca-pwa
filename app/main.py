@@ -316,32 +316,44 @@ async def toggle_user_active(user_id: int, request: Request, db: Session = Depen
 
 @app.get("/api/users/{user_id}/test_push")
 async def test_push(user_id: int, request: Request, db: Session = Depends(get_db)):
-    verify_api_key(request)
-    from pywebpush import webpush, WebPushException
-    user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
-    if not user or not user.devices:
-        return {"status": "error", "detail": "Usuario sin dispositivos"}
-        
-    subs = [json.loads(d.push_subscription) for d in user.devices]
-    errors = []
-    
-    for sub in subs:
-        try:
-            payload = json.dumps({
-                "title": "Configuración Exitosa",
-                "body": "¡Prueba de conexión exitosa! Este es tu nuevo sistema PWA.",
-                "url": "/"
-            })
-            webpush(
-                subscription_info=sub,
-                data=payload,
-                vapid_private_key=VAPID_PRIVATE_KEY,
-                vapid_claims=VAPID_CLAIMS
-            )
-        except Exception as ex:
-            errors.append(str(ex))
+    print(f"--- INICIANDO TEST PUSH PARA USUARIO {user_id} ---")
+    try:
+        verify_api_key(request)
+        print("API Key verificada")
+        from pywebpush import webpush, WebPushException
+        user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
+        if not user or not user.devices:
+            print("ERROR: Usuario sin dispositivos")
+            return {"status": "error", "detail": "Usuario sin dispositivos"}
             
-    return {"status": "success", "errors": errors}
+        subs = [json.loads(d.push_subscription) for d in user.devices]
+        print(f"Suscripciones cargadas: {len(subs)}")
+        errors = []
+        
+        for i, sub in enumerate(subs):
+            try:
+                print(f"Enviando WebPush a dispositivo {i+1}...")
+                payload = json.dumps({
+                    "title": "Prueba de Bot",
+                    "body": "¡Estamos en línea! Este es tu sistema PWA activo.",
+                    "url": "/"
+                })
+                webpush(
+                    subscription_info=sub,
+                    data=payload,
+                    vapid_private_key=VAPID_PRIVATE_KEY,
+                    vapid_claims=VAPID_CLAIMS
+                )
+                print(f"WebPush {i+1} RESPONDIDO con éxito")
+            except Exception as ex:
+                print(f"ERROR en WebPush {i+1}: {str(ex)}")
+                errors.append(str(ex))
+        
+        print(f"Test finalizado. Éxitos: {len(subs)-len(errors)}, Errores: {len(errors)}")
+        return {"status": "success", "errors": errors}
+    except Exception as e:
+        print(f"ERROR FATAL EN TEST PUSH: {str(e)}")
+        return {"status": "error", "detail": str(e)}
 
 # PWA Static Files Integration
 frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
