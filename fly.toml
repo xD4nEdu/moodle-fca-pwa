@@ -1,0 +1,23 @@
+# 1. Nombre de la App (Fly.io te la asignará o la pondrás tú)
+app = "moodle-fca-bot-xD4n"
+primary_region = "qro" # Monterrey/Guanajuato/Dallas/Miami/Ect.
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false # ¡MUY IMPORTANTE! Evita que el bot se duerma
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# 2. Base de Datos PERSISTENTE (Para que tus usuarios no se borren)
+[mounts]
+  source = "moodle_data"
+  destination = "/data"
+
+[env]
+  DATABASE_URL = "sqlite:////data/bot_fca.db"

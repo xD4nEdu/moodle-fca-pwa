@@ -1,9 +1,10 @@
 fastapi
-uvicorn[standard]
+uvicorn
 sqlalchemy
-python-dotenv
-pydantic>=2.0
-python-multipart
-aiohttp
+pydantic
 pywebpush
+requests
+email_validator
+python-multipart
+python-dotenv
 cryptography

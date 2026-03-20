@@ -13,7 +13,7 @@ VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "M6S7C-lZ5v8I9S_3H5Z8m3c4L8r8
 VAPID_CLAIMS = {"sub": "mailto:admin@fca-pwa.com"}
 
 # --- DB ---
-DB_URL = "sqlite:///./bot_fca.db"
+DB_URL = os.getenv("DATABASE_URL", "sqlite:///./bot_fca.db")
 Base = declarative_base()
 
 class ClientUser(Base):
