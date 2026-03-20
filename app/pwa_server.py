@@ -5,14 +5,22 @@ from sqlalchemy.orm import Session, relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timedelta
 from pydantic import BaseModel
+from cryptography.fernet import Fernet
 import json
 import os
 
-# --- SETTINGS ---
+# --- ENTORNO Y LLAVES REALES ---
 API_KEY = "1531"
-VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "BDXz7_m-hVQ... (Opcional si usas env)")
-VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "M6S7C-lZ5v8I9S_3H5Z8m3c4L8r8V8L8c4r8V8L8c4r")
-VAPID_CLAIMS = {"sub": "mailto:admin@fca-pwa.com"}
+SECRET_ENCRYPTION_KEY = os.getenv("SECRET_ENCRYPTION_KEY", "qYSSXrUitSkBJWLNj6jTl4-_KWWsziRK8RP9vMSleS4=")
+VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "BHTVz9fwKybXNasmAtEM-K7Cebkayuhsctrv7tZ0_IsaI3dMWO2n3U3CbtNcSJMf5B7JebXroYsM1RTs145XO8c")
+VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "iIG-apAQhmRwEe2oSzzTPMplb12qN_sNVj9sLChX5cE")
+VAPID_CLAIMS = {"sub": "mailto:botadmin@fca.unam.mx"}
+
+# Cifrado Fernet Real
+cipher_suite = Fernet(SECRET_ENCRYPTION_KEY.encode())
+
+def encrypt_password(plain: str) -> str: return cipher_suite.encrypt(plain.encode()).decode()
+def decrypt_password(enc: str) -> str: return cipher_suite.decrypt(enc.encode()).decode()
 
 # --- DB & MODELS ---
 DB_URL = os.getenv("DATABASE_URL", "sqlite:///./data/bot_fca.db")
@@ -23,7 +31,7 @@ class ClientUser(Base):
     id = Column(Integer, primary_key=True, index=True)
     faculty = Column(String)
     moodle_username = Column(String, unique=True, index=True)
-    moodle_password = Column(String) # Guardado en texto plano o cifrado (Termux usaba cifrado)
+    moodle_password = Column(String)
     is_active = Column(Boolean, default=True)
     devices = relationship("UserDevice", back_populates="user", cascade="all, delete-orphan")
 
@@ -45,10 +53,6 @@ class NotificationHistory(Base):
     url = Column(String)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-
-# Cifrado simple para mantener compatibilidad si es necesario
-def encrypt_password(password: str) -> str: return password # Por ahora directo para simplificar despliegue
-def decrypt_password(password: str) -> str: return password
 
 engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -83,22 +87,31 @@ def verify_api_key(request: Request):
 # --- PUBLIC ROUTES ---
 @app.get("/")
 def home():
-    return {"status": "online", "message": "FCA PWA Bot Profesh is running on Fly.io!", "version": "2.1.2"}
+    return {"status": "online", "message": "FCA PWA Bot ULTIMATE is running on Fly.io!", "version": "2.2.0"}
+
+@app.get("/api/faculties")
+def get_facs():
+    return {"faculties": ["contaduria", "administracion", "informatica", "negociosinternacionales", "empresariales"]}
 
 @app.get("/api/vapid-public-key")
 def get_vapid():
-    return {"vapid_public_key": os.getenv("VAPID_PUBLIC_KEY", "BJm6_hEw...") }
+    return {"vapid_public_key": VAPID_PUBLIC_KEY}
 
 @app.post("/api/users")
 async def register(data: UserCreate, db: Session = Depends(get_db)):
-    # Lógica de registro real
     existing = db.query(ClientUser).filter(ClientUser.moodle_username == data.moodle_username).first()
     if existing:
-        if existing.moodle_password == data.moodle_password:
-            return {"status": "exists", "user_id": existing.id, "device_count": len(existing.devices)}
-        raise HTTPException(400, "Usuario ya existe con otra clave")
+        try:
+            if decrypt_password(existing.moodle_password) == data.moodle_password:
+                return {"status": "exists", "user_id": existing.id, "device_count": len(existing.devices)}
+            raise HTTPException(400, "Contraseña incorrecta para el usuario existente")
+        except: raise HTTPException(400, "Error de cifrado. Registre de nuevo.")
     
-    new_u = ClientUser(faculty=data.faculty, moodle_username=data.moodle_username, moodle_password=data.moodle_password)
+    new_u = ClientUser(
+        faculty=data.faculty, 
+        moodle_username=data.moodle_username, 
+        moodle_password=encrypt_password(data.moodle_password)
+    )
     db.add(new_u)
     db.commit()
     return {"status": "success", "user_id": new_u.id}
@@ -111,8 +124,15 @@ async def subscribe(data: PushSubscribe, db: Session = Depends(get_db)):
     if data.replace_existing:
         db.query(UserDevice).filter(UserDevice.user_id == u.id).delete()
     
-    new_d = UserDevice(user_id=u.id, device_name=data.device_name, push_subscription=json.dumps(data.subscription))
-    db.add(new_d)
+    # Evitar duplicados por suscripción idéntica
+    sub_json = json.dumps(data.subscription)
+    existing_dev = db.query(UserDevice).filter_by(user_id=u.id, push_subscription=sub_json).first()
+    if not existing_dev:
+        new_d = UserDevice(user_id=u.id, device_name=data.device_name, push_subscription=sub_json)
+        db.add(new_d)
+    else:
+        existing_dev.last_used = datetime.utcnow()
+    
     db.commit()
     return {"status": "success"}
 
@@ -133,7 +153,12 @@ async def get_status(user_id: int, db: Session = Depends(get_db)):
         "recent_notifications": [{"id":n.id,"message":n.body,"is_read":n.is_read,"date":n.created_at.strftime("%H:%M")} for n in notifs]
     }
 
-# --- ADMIN ROUTES (Protected by 1531) ---
+@app.get("/api/users/{user_id}/devices")
+async def list_devs(user_id: int, db: Session = Depends(get_db)):
+    devs = db.query(UserDevice).filter_by(user_id=user_id).all()
+    return {"devices": [{"id":d.id, "name":d.device_name, "last_used":d.last_used.strftime("%d/%m %H:%M")} for d in devs]}
+
+# --- ADMIN ROUTES (Protected) ---
 @app.get("/api/users")
 async def list_users(request: Request, db: Session = Depends(get_db)):
     verify_api_key(request)
@@ -152,6 +177,16 @@ async def toggle(user_id: int, request: Request, db: Session = Depends(get_db)):
         db.commit()
         return {"status": "success", "new_state": u.is_active}
     return {"status": "error"}
+
+@app.delete("/api/users/{user_id}")
+async def delete_user(user_id: int, request: Request, db: Session = Depends(get_db)):
+    verify_api_key(request)
+    u = db.query(ClientUser).filter(ClientUser.id == user_id).first()
+    if u:
+        db.delete(u)
+        db.commit()
+        return {"status": "success"}
+    return {"status": "not_found"}
 
 @app.api_route("/api/users/{user_id}/test_push", methods=["GET", "POST"])
 async def test_push(user_id: int, request: Request, db: Session = Depends(get_db)):
