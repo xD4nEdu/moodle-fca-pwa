@@ -226,8 +226,10 @@ export default function Registration() {
 
   const handleReadNotification = async (notifId) => {
     try {
-      await fetch(apiUrl(`/api/notifications/${notifId}/read`), { method: 'POST' });
-    } catch (e) { console.error(e); }
+      await fetch(apiUrl(`/api/notifications/${notifId}/read`), { method: 'GET' });
+    } catch (e) {
+      console.error('Error al marcar aviso como leído:', e);
+    }
   };
 
   const handleDeleteNotification = async (notifId) => {

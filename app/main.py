@@ -5,7 +5,13 @@ from sqlalchemy.orm import Session
 import asyncio
 import os
 import json
+import logging
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from app.db.database import get_db, init_db, SessionLocal
 from app.db.models import ClientUser, MutedCourse, UserDevice, NotificationHistory
@@ -259,13 +265,17 @@ def delete_notification(notification_id: int, db: Session = Depends(get_db)):
         db.commit()
     return {"status": "deleted"}
 
-@app.post("/api/notifications/{notification_id}/read")
+@app.get("/api/notifications/{notification_id}/read")
 def mark_notif_read(notification_id: int, db: Session = Depends(get_db)):
-    notif = db.query(NotificationHistory).filter(NotificationHistory.id == notification_id).first()
-    if notif:
-        notif.is_read = True
-        db.commit()
-    return {"status": "ok"}
+    try:
+        notif = db.query(NotificationHistory).filter(NotificationHistory.id == notification_id).first()
+        if notif:
+            notif.is_read = True
+            db.commit()
+            return {"status": "ok", "id": notification_id, "is_read": True}
+        return {"status": "not_found"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
 
 @app.get("/api/users/{user_id}/status")
 async def get_user_status(user_id: int, db: Session = Depends(get_db)):
