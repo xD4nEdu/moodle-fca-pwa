@@ -15,7 +15,7 @@ COPY . .
 RUN chmod +x start.sh
 
 # 6. Exponer puerto (Por defecto en Fly.io)
-EXPOSE 8080
+EXPOSE 9000
 
 # 7. Ejecutar el mando a distancia
 CMD ["./start.sh"]

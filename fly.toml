@@ -1,9 +1,9 @@
 # 1. Nombre de la App (Fly.io te la asignará o la pondrás tú)
 app = "moodle-fca-pwa"
-primary_region = "qro" # Monterrey/Guanajuato/Dallas/Miami/Ect.
+primary_region = "dfw"
 
 [http_service]
-  internal_port = 8080
+  internal_port = 9000
   force_https = true
   auto_stop_machines = false # ¡MUY IMPORTANTE! Evita que el bot se duerma
   auto_start_machines = true
