@@ -3,17 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey, Text, desc
 from sqlalchemy.orm import Session, relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from datetime import datetime, timedelta
+from pydantic import BaseModel
 import json
 import os
 
 # --- SETTINGS ---
 API_KEY = "1531"
+VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "BDXz7_m-hVQ... (Opcional si usas env)")
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "M6S7C-lZ5v8I9S_3H5Z8m3c4L8r8V8L8c4r8V8L8c4r")
 VAPID_CLAIMS = {"sub": "mailto:admin@fca-pwa.com"}
 
-# --- DB ---
-DB_URL = os.getenv("DATABASE_URL", "sqlite:///./bot_fca.db")
+# --- DB & MODELS ---
+DB_URL = os.getenv("DATABASE_URL", "sqlite:///./data/bot_fca.db")
 Base = declarative_base()
 
 class ClientUser(Base):
@@ -21,9 +23,9 @@ class ClientUser(Base):
     id = Column(Integer, primary_key=True, index=True)
     faculty = Column(String)
     moodle_username = Column(String, unique=True, index=True)
-    moodle_password = Column(String)
+    moodle_password = Column(String) # Guardado en texto plano o cifrado (Termux usaba cifrado)
     is_active = Column(Boolean, default=True)
-    devices = relationship("UserDevice", back_populates="user")
+    devices = relationship("UserDevice", back_populates="user", cascade="all, delete-orphan")
 
 class UserDevice(Base):
     __tablename__ = "user_devices"
@@ -31,6 +33,7 @@ class UserDevice(Base):
     user_id = Column(Integer, ForeignKey("client_users.id"))
     device_name = Column(String)
     push_subscription = Column(Text)
+    last_used = Column(DateTime, default=datetime.utcnow)
     user = relationship("ClientUser", back_populates="devices")
 
 class NotificationHistory(Base):
@@ -43,15 +46,30 @@ class NotificationHistory(Base):
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+# Cifrado simple para mantener compatibilidad si es necesario
+def encrypt_password(password: str) -> str: return password # Por ahora directo para simplificar despliegue
+def decrypt_password(password: str) -> str: return password
+
 engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    try: yield db
+    finally: db.close()
+
+# --- PYDANTIC ---
+class UserCreate(BaseModel):
+    faculty: str
+    moodle_username: str
+    moodle_password: str
+
+class PushSubscribe(BaseModel):
+    user_id: int
+    subscription: dict
+    device_name: str
+    replace_existing: bool = False
 
 # --- APP ---
 app = FastAPI()
@@ -62,8 +80,62 @@ def verify_api_key(request: Request):
     if key and key.startswith("Bearer "): key = key.split(" ")[1]
     if key != API_KEY: raise HTTPException(401, "Error Auth")
 
-@app.api_route("/api/users", methods=["GET", "POST"])
-async def get_users(request: Request, db: Session = Depends(get_db)):
+# --- PUBLIC ROUTES ---
+@app.get("/")
+def home():
+    return {"status": "online", "message": "FCA PWA Bot Profesh is running on Fly.io!", "version": "2.1.2"}
+
+@app.get("/api/vapid-public-key")
+def get_vapid():
+    return {"vapid_public_key": os.getenv("VAPID_PUBLIC_KEY", "BJm6_hEw...") }
+
+@app.post("/api/users")
+async def register(data: UserCreate, db: Session = Depends(get_db)):
+    # Lógica de registro real
+    existing = db.query(ClientUser).filter(ClientUser.moodle_username == data.moodle_username).first()
+    if existing:
+        if existing.moodle_password == data.moodle_password:
+            return {"status": "exists", "user_id": existing.id, "device_count": len(existing.devices)}
+        raise HTTPException(400, "Usuario ya existe con otra clave")
+    
+    new_u = ClientUser(faculty=data.faculty, moodle_username=data.moodle_username, moodle_password=data.moodle_password)
+    db.add(new_u)
+    db.commit()
+    return {"status": "success", "user_id": new_u.id}
+
+@app.post("/api/subscribe")
+async def subscribe(data: PushSubscribe, db: Session = Depends(get_db)):
+    u = db.query(ClientUser).filter(ClientUser.id == data.user_id).first()
+    if not u: raise HTTPException(404, "User not found")
+    
+    if data.replace_existing:
+        db.query(UserDevice).filter(UserDevice.user_id == u.id).delete()
+    
+    new_d = UserDevice(user_id=u.id, device_name=data.device_name, push_subscription=json.dumps(data.subscription))
+    db.add(new_d)
+    db.commit()
+    return {"status": "success"}
+
+@app.get("/api/users/{user_id}/status")
+async def get_status(user_id: int, db: Session = Depends(get_db)):
+    u = db.query(ClientUser).filter(ClientUser.id == user_id).first()
+    if not u: raise HTTPException(404)
+    
+    cutoff = datetime.utcnow() - timedelta(hours=24)
+    notifs = db.query(NotificationHistory).filter(
+        NotificationHistory.user_id == user_id, 
+        NotificationHistory.created_at >= cutoff
+    ).order_by(desc(NotificationHistory.created_at)).all()
+    
+    return {
+        "is_active": u.is_active,
+        "device_count": len(u.devices),
+        "recent_notifications": [{"id":n.id,"message":n.body,"is_read":n.is_read,"date":n.created_at.strftime("%H:%M")} for n in notifs]
+    }
+
+# --- ADMIN ROUTES (Protected by 1531) ---
+@app.get("/api/users")
+async def list_users(request: Request, db: Session = Depends(get_db)):
     verify_api_key(request)
     users = db.query(ClientUser).all()
     return {"status": "ok", "users": [{
@@ -95,27 +167,14 @@ async def test_push(user_id: int, request: Request, db: Session = Depends(get_db
         except: pass
     return {"status": "success"}
 
-@app.get("/api/notifications")
-async def get_notifs(user_id: int, db: Session = Depends(get_db)):
-    ns = db.query(NotificationHistory).filter(NotificationHistory.user_id == user_id).order_by(desc(NotificationHistory.created_at)).limit(20).all()
-    return {"notifications": [{"id": n.id, "title": n.title, "body": n.body, "is_read": n.is_read} for n in ns]}
-
-@app.api_route("/api/notifications/{n_id}/read", methods=["GET", "POST"])
-async def read(n_id: int, db: Session = Depends(get_db)):
+@app.get("/api/notifications/{n_id}/read")
+async def read_notif(n_id: int, db: Session = Depends(get_db)):
     n = db.query(NotificationHistory).filter(NotificationHistory.id == n_id).first()
     if n:
         n.is_read = True
         db.commit()
         return {"status": "ok"}
     return {"status": "error"}
-
-@app.get("/")
-def home():
-    return {"status": "online", "message": "FCA PWA Bot is running on Fly.io!", "version": "2.1.0"}
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
 
 if __name__ == "__main__":
     import uvicorn
