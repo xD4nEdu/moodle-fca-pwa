@@ -109,6 +109,14 @@ async def read(n_id: int, db: Session = Depends(get_db)):
         return {"status": "ok"}
     return {"status": "error"}
 
+@app.get("/")
+def home():
+    return {"status": "online", "message": "FCA PWA Bot is running on Fly.io!", "version": "2.1.0"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=9000)
