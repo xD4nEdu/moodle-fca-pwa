@@ -1,6 +1,6 @@
 # 1. Nombre de la App (Fly.io te la asignará o la pondrás tú)
 app = "moodle-fca-pwa"
-primary_region = "dfw"
+primary_region = "mia"
 
 [http_service]
   internal_port = 9000
