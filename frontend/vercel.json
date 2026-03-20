@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://humanity-mary-lifestyle-literacy.trycloudflare.com/api/$1" },
+    { "source": "/api/(.*)", "destination": "https://reprint-truly-findings-butter.trycloudflare.com/api/$1" },
     { "source": "/(.*)", "destination": "/" }
   ]
 }
