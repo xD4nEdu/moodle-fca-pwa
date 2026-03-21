@@ -38,7 +38,7 @@ DB_URL = os.getenv("DATABASE_URL", "sqlite:///./data/bot_fca.db")
 Base = declarative_base()
 
 class ClientUser(Base):
-    __tablename__ = "client_users"
+    __tablename__ = "clients"
     id = Column(Integer, primary_key=True, index=True)
     faculty = Column(String)
     moodle_username = Column(String, unique=True, index=True)
@@ -50,7 +50,7 @@ class ClientUser(Base):
 class UserDevice(Base):
     __tablename__ = "user_devices"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("client_users.id"))
+    user_id = Column(Integer, ForeignKey("clients.id"))
     device_name = Column(String)
     push_subscription = Column(Text)
     last_used = Column(DateTime, default=datetime.utcnow)
