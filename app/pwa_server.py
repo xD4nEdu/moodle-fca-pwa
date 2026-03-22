@@ -1,8 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey, Text, desc
-from sqlalchemy.orm import Session, relationship, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from cryptography.fernet import Fernet
@@ -10,6 +9,9 @@ import json
 import os
 import asyncio
 import logging
+
+from app.db.database import SessionLocal, get_db, init_db
+from app.db.models import ClientUser, UserDevice, NotificationHistory, ProcessedItem, MutedCourse
 
 # --- LOGS ---
 logger = logging.getLogger("bot")
@@ -33,63 +35,6 @@ def decrypt_password(enc: str) -> str:
     except Exception:
         return enc
 
-# --- DB & MODELS ---
-DB_URL = os.getenv("DATABASE_URL", "sqlite:///./data/bot_fca.db")
-Base = declarative_base()
-
-class ClientUser(Base):
-    __tablename__ = "clients"
-    id = Column(Integer, primary_key=True, index=True)
-    faculty = Column(String)
-    moodle_username = Column(String, unique=True, index=True)
-    moodle_password = Column(String)
-    moodle_token = Column(String, nullable=True)
-    is_active = Column(Boolean, default=True)
-    devices = relationship("UserDevice", back_populates="user", cascade="all, delete-orphan")
-
-class UserDevice(Base):
-    __tablename__ = "user_devices"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("clients.id"))
-    device_name = Column(String)
-    push_subscription = Column(Text)
-    last_used = Column(DateTime, default=datetime.utcnow)
-    user = relationship("ClientUser", back_populates="devices")
-
-class NotificationHistory(Base):
-    __tablename__ = "notification_history"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True)
-    title = Column(String, nullable=True)
-    body = Column(String)
-    url = Column(String, nullable=True)
-    is_read = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class ProcessedItem(Base):
-    __tablename__ = "processed_items"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True)
-    course_id = Column(Integer, index=True)
-    item_type = Column(String)
-    item_id = Column(Integer)
-    processed_at = Column(DateTime, default=datetime.utcnow)
-
-class MutedCourse(Base):
-    __tablename__ = "muted_courses"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True)
-    course_id = Column(Integer, index=True)
-
-engine = create_engine(DB_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base.metadata.create_all(bind=engine)
-
-def get_db():
-    db = SessionLocal()
-    try: yield db
-    finally: db.close()
-
 # --- PYDANTIC ---
 class UserCreate(BaseModel):
     faculty: str
@@ -108,6 +53,9 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 @app.on_event("startup")
 async def startup_event():
+    # Asegurarnos de que las tablas existan antes de arrancar nada
+    init_db()
+    
     # Arrancar el motor de búsqueda en segundo plano
     logger.info("⚡ ARRANCANDO MOTOR DE BÚSQUEDA MOODLE...")
     from app.bot.task import background_moodle_task

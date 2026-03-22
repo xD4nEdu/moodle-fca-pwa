@@ -3,9 +3,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.db.models import Base
 
-# Utilizaremos SQLite por defecto. Para Termux es muy ligero.
-# Si a futuro necesitas migrar a PostgreSQL o MySQL, solo cambias esta ruta:
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./bot_fca.db")
+# Fly.io usa /data/ para persistencia. Termux usa ./data/
+# Le daremos preferencia a la variable de entorno, de lo contrario un path seguro para Fly.
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/bot_fca.db")
 
 engine = create_engine(
     DATABASE_URL, 
@@ -15,7 +15,7 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
-    # Crea las tablas si no existen
+    # Crea las tablas si no existen según el plano CENTRAL
     Base.metadata.create_all(bind=engine)
 
 def get_db():
