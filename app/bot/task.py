@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.db.models import ClientUser, ProcessedItem, MutedCourse, NotificationHistory
+from app.core.config import VAPID_PRIVATE_KEY, VAPID_CLAIMS
 from app.services.moodle import MoodleClient
 from app.core.security import decrypt_password, encrypt_token, decrypt_token
 import json

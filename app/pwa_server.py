@@ -10,19 +10,14 @@ import os
 import asyncio
 import logging
 
-from app.db.database import SessionLocal, get_db, init_db
-from app.db.models import ClientUser, UserDevice, NotificationHistory, ProcessedItem, MutedCourse
 
 # --- LOGS ---
 logger = logging.getLogger("bot")
 logging.basicConfig(level=logging.INFO)
 
-# --- ENTORNO Y LLAVES REALES ---
-API_KEY = "1531"
-SECRET_ENCRYPTION_KEY = os.getenv("SECRET_ENCRYPTION_KEY", "qYSSXrUitSkBJWLNj6jTl4-_KWWsziRK8RP9vMSleS4=")
-VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "BHTVz9fwKybXNasmAtEM-K7Cebkayuhsctrv7tZ0_IsaI3dMWO2n3U3CbtNcSJMf5B7JebXroYsM1RTs145XO8c")
-VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "iIG-apAQhmRwEe2oSzzTPMplb12qN_sNVj9sLChX5cE")
-VAPID_CLAIMS = {"sub": "mailto:botadmin@fca.unam.mx"}
+from app.db.database import SessionLocal, get_db, init_db
+from app.db.models import ClientUser, UserDevice, NotificationHistory, ProcessedItem, MutedCourse
+from app.core.config import API_KEY, SECRET_ENCRYPTION_KEY, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_CLAIMS
 
 # Cifrado Fernet Real con fallback a texto plano
 cipher_suite = Fernet(SECRET_ENCRYPTION_KEY.encode())

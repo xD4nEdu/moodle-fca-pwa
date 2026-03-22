@@ -2,10 +2,10 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.db.models import Base
+from app.core.config import DATABASE_URL
 
 # Fly.io usa /data/ para persistencia. Termux usa ./data/
-# Le daremos preferencia a la variable de entorno, de lo contrario un path seguro para Fly.
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/bot_fca.db")
+# Le daremos preferencia a la variable de entorno desde config.py
 
 engine = create_engine(
     DATABASE_URL, 
