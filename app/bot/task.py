@@ -174,7 +174,7 @@ async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
             db.close()
 
         # Solo si el guardado SQL fue exitoso, enviamos los mensajes pendientes.
-        if not is_first_sync and VAPID_PRIVATE_KEY and mensajes_pendientes:
+        if VAPID_PRIVATE_KEY and mensajes_pendientes:
             db_notif = SessionLocal()
             try:
                 user = db_notif.query(ClientUser).filter(ClientUser.id == user_id).first()
