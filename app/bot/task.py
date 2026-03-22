@@ -1,8 +1,7 @@
 import asyncio
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
-from app.db.database import get_db, SessionLocal
-from app.db.models import ClientUser, ProcessedItem, MutedCourse
+from app.pwa_server import SessionLocal, ClientUser, ProcessedItem, MutedCourse, NotificationHistory
 from app.services.moodle import MoodleClient
 from app.core.security import decrypt_password, encrypt_token, decrypt_token
 import json
@@ -40,7 +39,6 @@ async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
     async with semaphore:
         db: Session = SessionLocal()
         mensajes_pendientes = []
-        push_sub = None
         is_first_sync = True
         try:
             user = db.query(ClientUser).filter(ClientUser.id == user_id).first()
@@ -62,7 +60,6 @@ async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
             is_first_sync = db.query(ProcessedItem).filter(ProcessedItem.user_id == user.id).count() == 0
             is_first_msg_sync = db.query(ProcessedItem).filter_by(user_id=user.id, item_type="mensaje").count() == 0
             is_first_notif_sync = db.query(ProcessedItem).filter_by(user_id=user.id, item_type="notificacion").count() == 0
-            push_sub = user.push_subscription
                 
             # 1. Verificar Cursos (Archivos, Tareas, etc)
             courses = await moodle.get_user_courses(userid)
@@ -183,11 +180,13 @@ async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
                 if user and user.devices:
                     for text in mensajes_pendientes:
                         try:
+                            summary = text.split(' [DETAILS] ')[0].strip()
+                            details = text.split(' [DETAILS] ')[1].strip() if ' [DETAILS] ' in text else text
+                            
                             # Log de notificación
-                            db_notif.add(NotificationHistory(user_id=user.id, message=text))
+                            db_notif.add(NotificationHistory(user_id=user.id, title=summary, body=details))
                             db_notif.commit()
                             
-                            summary = text.split(' [DETAILS] ')[0].strip()
                             payload = json.dumps({
                                 "title": "Moodle FCA 🎓",
                                 "body": summary,
