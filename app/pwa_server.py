@@ -76,7 +76,6 @@ def get_vapid():
 
 @app.post("/api/users")
 async def register(data: UserCreate, db: Session = Depends(get_db)):
-    print(f"➕ [REGISTRO] Intentando registrar: {data.moodle_username}", flush=True)
     existing = db.query(ClientUser).filter(ClientUser.moodle_username == data.moodle_username).first()
     if existing:
         if decrypt_password(existing.moodle_password) == data.moodle_password:
@@ -97,7 +96,6 @@ async def register(data: UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/api/subscribe")
 async def subscribe(data: PushSubscribe, db: Session = Depends(get_db)):
-    print(f"🛰️ [SUSCRIPCIÓN] Vinculando dispositivo '{data.device_name}' para user_id={data.user_id}", flush=True)
     u = db.query(ClientUser).filter(ClientUser.id == data.user_id).first()
     if not u: raise HTTPException(404, "User not found")
     
@@ -129,7 +127,7 @@ async def get_status(user_id: int, db: Session = Depends(get_db)):
     return {
         "is_active": u.is_active,
         "device_count": len(u.devices),
-        "recent_notifications": [{"id":n.id,"message":n.body,"is_read":n.is_read,"date":n.created_at.strftime("%H:%M")} for n in notifs]
+        "recent_notifications": [{"id":n.id,"message":f"{n.title} [DETAILS] {n.body}","is_read":n.is_read,"date":n.created_at.strftime("%H:%M")} for n in notifs]
     }
 
 @app.get("/api/users/{user_id}/devices")
@@ -171,7 +169,6 @@ async def delete_user(user_id: int, request: Request, db: Session = Depends(get_
 
 @app.api_route("/api/users/{user_id}/test_push", methods=["GET", "POST"])
 async def test_push(user_id: int, request: Request, db: Session = Depends(get_db)):
-    print(f"🚨 [TEST_PUSH] Disparando prueba para user_id={user_id}", flush=True)
     verify_api_key(request)
     from pywebpush import webpush
     u = db.query(ClientUser).filter(ClientUser.id == user_id).first()
