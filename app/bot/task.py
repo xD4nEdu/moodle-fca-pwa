@@ -103,7 +103,7 @@ async def check_user_moodle(user_id: int, semaphore: asyncio.Semaphore):
                                 # Formato estructurado para la BD
                                 details = f"📂 Apartado: {section_name}\n"
                                 details += f"{icon} Tipo: {type_name}\n"
-                                details += f"⏰ Avisado: {cdmx_now.strftime('%H:%M %p')}\n"
+                                details += f"⏰ Avisado: {cdmx_now.strftime('%I:%M %p')}\n"
                                 
                                 if mod_type == "assign" and mod_id in assignments_map:
                                     # Moodle timestamp (UTC) a CDMX (GMT-6)

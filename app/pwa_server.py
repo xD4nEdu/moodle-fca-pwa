@@ -127,7 +127,7 @@ async def get_status(user_id: int, db: Session = Depends(get_db)):
     return {
         "is_active": u.is_active,
         "device_count": len(u.devices),
-        "recent_notifications": [{"id":n.id,"message":f"{n.title} [DETAILS] {n.body}","is_read":n.is_read,"date":n.created_at.strftime("%H:%M")} for n in notifs]
+        "recent_notifications": [{"id":n.id,"message":f"{n.title} [DETAILS] {n.body}","is_read":n.is_read,"date":(n.created_at - timedelta(hours=6)).strftime("%H:%M")} for n in notifs]
     }
 
 @app.get("/api/users/{user_id}/devices")
