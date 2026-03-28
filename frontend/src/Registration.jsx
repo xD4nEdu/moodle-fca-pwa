@@ -257,6 +257,21 @@ export default function Registration() {
     } catch (e) { console.error(e); }
   };
 
+  const handleToggleActive = async () => {
+    const userId = localStorage.getItem('moodle_pwa_user_id');
+    if (!userId) return;
+    try {
+      const res = await fetch(apiUrl(`/api/users/${userId}/toggle`), {
+        method: 'POST',
+        headers: { "X-API-Key": "1531" }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAccountStatus(prev => prev ? {...prev, is_active: data.new_state} : null);
+      }
+    } catch (e) { console.error('Error toggling state:', e); }
+  };
+
   // View: Install PWA
   if (!standalone) {
     return (
@@ -334,10 +349,21 @@ export default function Registration() {
              </div>
           </div>
           
-          <h2 className="text-3xl font-black bg-gradient-to-r from-fca-orange to-fca-yellow bg-clip-text text-transparent text-center mb-2 tracking-tighter">
-            Notificaciones Activas
+          <h2 className={`text-3xl font-black bg-gradient-to-r bg-clip-text text-transparent text-center mb-2 tracking-tighter transition-all ${accountStatus?.is_active ? 'from-fca-orange to-fca-yellow' : 'from-slate-400 to-slate-600'}`}>
+            {accountStatus?.is_active ? 'Notificaciones Activadas' : 'Notificaciones Desactivadas'}
           </h2>
-          <p className="text-center text-slate-500 dark:text-slate-400 mb-8 text-sm font-medium">Recuperando avisos en tiempo real</p>
+          
+          <div className="flex flex-col items-center mb-8">
+            <p className="text-center text-slate-500 dark:text-slate-400 mb-4 text-sm font-medium">
+              {accountStatus?.is_active ? 'Recuperando avisos en tiempo real' : 'Avisos pausados temporalmente'}
+            </p>
+            <button
+              onClick={handleToggleActive}
+              className={`relative inline-flex h-8 w-16 items-center rounded-full transition-colors cursor-pointer shadow-inner ${accountStatus?.is_active ? 'bg-fca-orange' : 'bg-slate-300 dark:bg-slate-700'}`}
+            >
+              <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform shadow-md ${accountStatus?.is_active ? 'translate-x-[34px]' : 'translate-x-1'}`} />
+            </button>
+          </div>
           
           {accountStatus && (
             <motion.div 
@@ -351,21 +377,9 @@ export default function Registration() {
                    <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Carrera</span>
                    <span className="text-sm font-black text-slate-800 dark:text-slate-100 capitalize">{accountStatus.faculty || 'Cargando...'}</span>
                  </div>
-                 <div className="flex justify-between items-center">
+                 <div className="flex justify-between items-center pt-3 mt-1 border-t border-black/5 dark:border-white/5">
                    <span className="text-sm font-bold text-slate-500 dark:text-slate-400">No. Cuenta</span>
                    <span className="text-sm font-black text-slate-800 dark:text-slate-100">{accountStatus.moodle_username || 'Cargando...'}</span>
-                 </div>
-                 <div className="flex justify-between items-center pt-3 mt-1 border-t border-black/5 dark:border-white/5">
-                   <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Push Vinculado</span>
-                   {accountStatus.device_count > 0 ? (
-                      <span className="text-xs font-black bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400 px-3 py-1.5 rounded-full flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(34,197,94,0.5)]" /> Sí
-                      </span>
-                   ) : (
-                      <span className="text-xs font-black bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 px-3 py-1.5 rounded-full flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full" /> No
-                      </span>
-                   )}
                  </div>
                </div>
             </motion.div>
