@@ -1,55 +1,95 @@
-# Moodle FCA Notifier - PWA & Web Push Bot
+# 🎓 Moodle FCA Notifier PWA
 
-Este es un bot diseñado para revisar la plataforma Moodle de la FCA UNAM (Administración, Contaduría, e Informática) cada minuto y notificar a los usuarios en tiempo real a través de **Notificaciones Nativas Web Push**.
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Fly.io](https://img.shields.io/badge/Fly.io-243545?style=for-the-badge&logo=fly.io&logoColor=white)](https://fly.io/)
+[![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 
-Cuenta con una **Progressive Web App (PWA)** desarrollada en React + Vite, y un Backend asíncrono en FastAPI.
+> **Bot notificador de alto rendimiento para alumnos de la FCA UNAM.** Monitoreo en tiempo real, notificaciones nativas push y una experiencia de usuario premium diseñada para la productividad académica.
 
-## Arquitectura del Proyecto
-- **Backend (Python 3.10+):** FastAPI, SQLAlchemy (SQLite), PyWebPush (Criptografía VAPID). Se encarga del scraping continuo (`background_moodle_task`) y del envío de notificaciones.
-- **Frontend (React + Vite):** Interfaz PWA instalable en iOS/Android/PC. Implementa `vite-plugin-pwa` y Service Workers para recibir los pushes en segundo plano. Módulo de Registro y Dashboard de Administración protegidos. Soporte Dark/Light mode con Tailwind CSS.
-- **Túnel Público:** Utiliza Cloudflare Tunnels (`cloudflared`) para exponer el puerto local al internet de forma segura con encriptación HTTPS (requisito estricto para Web Push y PWA).
+---
 
-## Requisitos Previos (Entorno de Desarrollo en PC)
-1. Instalar dependencias de Python:
+## 🌟 Características Principales
+
+### 📱 Experiencia PWA (Progressive Web App)
+- **Instalable:** Funciona como una aplicación nativa en iOS, Android y Desktop.
+- **Offline Ready:** Navegación fluida incluso con conexión intermitente gracias a Service Workers.
+- **Diseño Glassmorphism:** Interfaz moderna con efectos de desenfoque, gradientes vibrantes y micro-animaciones (Framer Motion).
+
+### 🤖 Bot Inteligente de Monitoreo
+- **Sincronización Real-Time:** Consulta las plataformas de **Contaduría, Administración e Informática** cada 60 segundos.
+- **Notificaciones Segmentadas:** Detecta tareas nuevas, archivos subidos, mensajes directos y avisos generales.
+- **Seguridad de Grado Bancario:** Encriptación Fernet (AES-128) para credenciales de usuario y tokens de acceso.
+
+### 🛠️ Panel de Control Administrativo
+- **Gestión de Usuarios:** Activación/Desactivación y monitoreo de dispositivos vinculados.
+- **Broadcast Global:** Capacidad de enviar avisos masivos a todos los estudiantes registrados con un solo clic.
+- **Diagnóstico Push:** Sistema de pruebas en tiempo real para verificar la entrega de notificaciones.
+
+---
+
+## 🏗️ Arquitectura del Sistema
+
+```mermaid
+graph TD
+    A[Alumno - PWA React] -->|Registro/Status| B[Proxy Vercel]
+    B -->|API/HTTPS| C[Backend FastAPI - Fly.io]
+    C -->|Background Task| D[SQLite Persistent DB]
+    C -->|Web Push VAPID| E[Google/Apple Push Servers]
+    E -->|Push Notification| A
+    C -->|Scraping Cada 60s| F[Moodle FCA Platform]
+```
+
+### Stack Tecnológico
+- **Frontend:** React 18, Vite, Tailwind CSS, Framer Motion, Lucide React.
+- **Backend:** FastAPI, SQLAlchemy, PyWebPush, Cryptography (Fernet).
+- **Infraestructura:** 
+    - **Frontend:** Hosted en Vercel (Edge Network).
+    - **Backend:** Hosted en Fly.io (Contenedores Docker con volúmenes persistentes).
+    - **Base de Datos:** SQLite con persistencia en volumen dedicado.
+
+---
+
+## 🚀 Instalación y Desarrollo
+
+### Requisitos
+- Python 3.10+
+- Node.js 18+
+- Fly.io CLI (Para despliegue)
+
+### Configuración Local
+
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/xD4nEdu/moodle-fca-pwa.git
+   cd moodle-fca-pwa
+   ```
+
+2. **Backend:**
    ```bash
    pip install -r requirements.txt
+   # Configurar variables de entorno en .env
+   python -m uvicorn app.pwa_server:app --port 9000 --reload
    ```
-2. Instalar dependencias de Node.js (Frontend):
+
+3. **Frontend:**
    ```bash
    cd frontend
    npm install
-   ```
-3. Generar las llaves VAPID (Para Notificaciones Push):
-   - Ejecuta `python generate_vapid.py` en la raíz del proyecto.
-   - Esto creará automáticamente un archivo `.env` con tus llaves Públicas, Privadas y el Secreto de Encriptación.
-
-## Iniciar el Entorno de Desarrollo
-Para arrancar el todo el sistema en tu PC, necesitas levantar tres servicios en terminales independientes:
-
-**Terminal 1 (Backend FastAPI):**
-```bash
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
-
-**Terminal 2 (Frontend React):**
-```bash
-cd frontend
-npm run dev
-```
-
-**Terminal 3 (Cloudflare Tunnel público):**
-```bash
-python run_tunnel.py
-```
-*(El enlace público HTTPS se guardará automáticamente en el archivo `mi_link_publico.txt`)*
-
-## Para Producción
-Si deseas subir el frontend a una plataforma como Vercel o Netlify:
-1. Asegúrate de configurar la ruta del backend en tu código de React o usar el Tunnel de Cloudflare como ruta estática en la nube.
-2. Compila el frontend usando:
-   ```bash
-   cd frontend
-   npm run build
+   npm run dev
    ```
 
-El backend debe permanecer siempre ejecutándose (ya sea en un VPS, un celular con Termux, o tu PC local) para que el ciclo de scraping hacia Moodle no se interrumpa.
+---
+
+## 📊 Impacto Académico
+Este proyecto nace de la necesidad de los alumnos por mantenerse al día con el flujo constante de información académica. Al centralizar las notificaciones de las tres carreras principales de la FCA, reduce el "miedo a perderse de algo" (FOMO) y mejora los tiempos de entrega de los estudiantes.
+
+---
+
+## 📄 Licencia
+Este proyecto es de uso personal y académico. Todos los derechos reservados a los desarrolladores.
+
+---
+*Desarrollado con ❤️ para la comunidad de la FCA UNAM.*
