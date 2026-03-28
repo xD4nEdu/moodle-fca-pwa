@@ -127,6 +127,8 @@ async def get_status(user_id: int, db: Session = Depends(get_db)):
     return {
         "is_active": u.is_active,
         "device_count": len(u.devices),
+        "faculty": u.faculty,
+        "moodle_username": u.moodle_username,
         "recent_notifications": [{"id":n.id,"message":f"{n.title} [DETAILS] {n.body}","is_read":n.is_read,"date":(n.created_at - timedelta(hours=6)).strftime("%H:%M")} for n in notifs]
     }
 
@@ -172,14 +174,23 @@ async def test_push(user_id: int, request: Request, db: Session = Depends(get_db
     verify_api_key(request)
     from pywebpush import webpush
     u = db.query(ClientUser).filter(ClientUser.id == user_id).first()
-    if not u or not u.devices: return {"status": "error"}
+    if not u or not u.devices: return {"status": "error", "message": "No devices linked"}
+    
+    errors = []
+    success_count = 0
     for d in u.devices:
         sub = json.loads(d.push_subscription)
         try:
             webpush(subscription_info=sub, data=json.dumps({"title":"PRUEBA","body":"Bot OK","url":"/"}), 
                     vapid_private_key=VAPID_PRIVATE_KEY, vapid_claims=VAPID_CLAIMS)
-        except: pass
-    return {"status": "success"}
+            success_count += 1
+        except Exception as e:
+            logger.error(f"Test push err for device {d.id}: {str(e)}")
+            errors.append(str(e))
+            
+    if success_count == 0 and errors:
+        return {"status": "error", "message": "All devices failed", "errors": errors}
+    return {"status": "success", "successes": success_count, "errors": errors}
 
 @app.get("/api/notifications/{n_id}/read")
 async def read_notif(n_id: int, db: Session = Depends(get_db)):

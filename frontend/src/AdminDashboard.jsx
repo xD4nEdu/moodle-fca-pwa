@@ -67,12 +67,20 @@ export default function AdminDashboard() {
     const headers = { "X-API-Key": "1531", "Authorization": "Bearer 1531" };
     try {
       const res = await fetch(apiUrl(`/api/users/${userId}/test_push`), { method: 'GET', headers });
-      if (!res.ok) {
-        throw new Error('Error al mandar la prueba Push');
+      if (!res.ok) throw new Error('Error al mandar la prueba Push (HTTP Falló)');
+      
+      const data = await res.json();
+      if (data.status === 'error') {
+        throw new Error(data.message || (data.errors && data.errors[0]) || 'Error desconocido del servidor');
       }
-      alert('¡Notificación de prueba lanzada!');
+      
+      let msg = '¡Notificación de prueba lanzada!';
+      if (data.successes > 0) msg += `\nEntregada a ${data.successes} dispositivo(s).`;
+      if (data.errors && data.errors.length > 0) msg += `\nErrores: ${data.errors.join(', ')}`;
+      
+      alert(msg);
     } catch (e) {
-      alert("Error de red: " + e.message);
+      alert("Error en prueba Push:\n" + e.message);
     }
   };
 
@@ -139,7 +147,7 @@ export default function AdminDashboard() {
                 <thead>
                   <tr className="bg-slate-50 dark:bg-fca-dark/50 text-slate-600 dark:text-fca-gray text-sm uppercase tracking-wider">
                     <th className="p-5 font-semibold">ID</th>
-                    <th className="p-5 font-semibold">Facultad</th>
+                    <th className="p-5 font-semibold">Carrera</th>
                     <th className="p-5 font-semibold">No. Cuenta</th>
                     <th className="p-5 font-semibold">Estado</th>
                     <th className="p-5 font-semibold">Push Vinculado</th>

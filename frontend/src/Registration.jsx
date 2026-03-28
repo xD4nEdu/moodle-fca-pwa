@@ -55,7 +55,7 @@ export default function Registration() {
     return (
       <form onSubmit={(e) => onRegister(e, { faculty, username, password })} className="space-y-6">
         <div className="space-y-2">
-          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-2">Facultad</label>
+          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-2">Carrera</label>
           <select 
             value={faculty} 
             onChange={(e) => setFaculty(e.target.value)}
@@ -339,6 +339,38 @@ export default function Registration() {
           </h2>
           <p className="text-center text-slate-500 dark:text-slate-400 mb-8 text-sm font-medium">Recuperando avisos en tiempo real</p>
           
+          {accountStatus && (
+            <motion.div 
+               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+               className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 p-5 rounded-3xl mb-8 relative overflow-hidden"
+            >
+               <div className="absolute top-0 right-0 w-32 h-32 bg-fca-orange/10 blur-3xl rounded-full pointer-events-none" />
+               <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Mi Perfil Estudiantil</h3>
+               <div className="space-y-3 relative z-10">
+                 <div className="flex justify-between items-center">
+                   <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Carrera</span>
+                   <span className="text-sm font-black text-slate-800 dark:text-slate-100 capitalize">{accountStatus.faculty || 'Cargando...'}</span>
+                 </div>
+                 <div className="flex justify-between items-center">
+                   <span className="text-sm font-bold text-slate-500 dark:text-slate-400">No. Cuenta</span>
+                   <span className="text-sm font-black text-slate-800 dark:text-slate-100">{accountStatus.moodle_username || 'Cargando...'}</span>
+                 </div>
+                 <div className="flex justify-between items-center pt-3 mt-1 border-t border-black/5 dark:border-white/5">
+                   <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Push Vinculado</span>
+                   {accountStatus.device_count > 0 ? (
+                      <span className="text-xs font-black bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400 px-3 py-1.5 rounded-full flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(34,197,94,0.5)]" /> Sí
+                      </span>
+                   ) : (
+                      <span className="text-xs font-black bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 px-3 py-1.5 rounded-full flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full" /> No
+                      </span>
+                   )}
+                 </div>
+               </div>
+            </motion.div>
+          )}
+
           <div className="space-y-6">
             {accountStatus?.device_count > 1 && (
                  <motion.div 
