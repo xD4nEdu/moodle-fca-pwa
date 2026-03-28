@@ -192,6 +192,33 @@ async def test_push(user_id: int, request: Request, db: Session = Depends(get_db
         return {"status": "error", "message": "All devices failed", "errors": errors}
     return {"status": "success", "successes": success_count, "errors": errors}
 
+@app.post("/api/admin/broadcast")
+async def broadcast_message(request: Request, db: Session = Depends(get_db)):
+    verify_api_key(request)
+    from pywebpush import webpush
+    users = db.query(ClientUser).all()
+    success_count = 0
+    err_count = 0
+    
+    for u in users:
+        if not u.devices: continue
+        for d in u.devices:
+            sub = json.loads(d.push_subscription)
+            try:
+                webpush(subscription_info=sub, 
+                        data=json.dumps({"title":"FCA ACTUALIZACIÓN 🚨", "body":"La app se actualizó recientemente.", "url":"/"}), 
+                        vapid_private_key=VAPID_PRIVATE_KEY, vapid_claims=VAPID_CLAIMS)
+                
+                db.add(NotificationHistory(user_id=u.id, title="FCA ACTUALIZACIÓN 🚨", body="La app se actualizó recientemente."))
+                success_count += 1
+            except Exception as e:
+                err_count += 1
+                logger.error(f"Broadcast err for dev {d.id}: {str(e)}")
+                
+    db.commit()
+    return {"status": "success", "successes": success_count, "errors": err_count}
+
+
 @app.get("/api/notifications/{n_id}/read")
 async def read_notif(n_id: int, db: Session = Depends(get_db)):
     n = db.query(NotificationHistory).filter(NotificationHistory.id == n_id).first()

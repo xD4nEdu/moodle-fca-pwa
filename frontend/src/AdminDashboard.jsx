@@ -84,6 +84,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleBroadcast = async () => {
+    if (!window.confirm("¿Seguro que deseas enviar un aviso global a todos los dispositivos?")) return;
+    
+    const headers = { "X-API-Key": "1531", "Authorization": "Bearer 1531", "Content-Type": "application/json" };
+    try {
+      const res = await fetch(apiUrl('/api/admin/broadcast'), { method: 'POST', headers });
+      if (!res.ok) throw new Error('Error al conectar con la API de broadcast');
+      const data = await res.json();
+      alert(`¡Aviso general enviado exitosamente!\n\nEntregados: ${data.successes} dispositivo(s)\nErrores al pushear: ${data.errors || 0}`);
+    } catch (e) {
+      alert("Error en el envío general:\n" + e.message);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 font-outfit text-slate-800 dark:text-slate-200 relative">
@@ -128,7 +142,11 @@ export default function AdminDashboard() {
             <h1 className="text-4xl font-extrabold bg-gradient-to-r from-fca-orange to-fca-orangeLight dark:from-fca-orangeLight dark:to-fca-yellow bg-clip-text text-transparent drop-shadow-sm">Panel de Control</h1>
             <p className="text-slate-500 dark:text-fca-gray mt-2">Administración de Usuarios Moodle PWA</p>
           </div>
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-wrap gap-3 items-center">
+            <button onClick={handleBroadcast} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-fca-orange to-fca-orangeShadow hover:from-fca-orangeShadow hover:to-fca-orange text-white font-bold text-sm shadow-md shadow-fca-orange/20 transition-all active:scale-95 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+              Aviso general de actualización
+            </button>
             <ThemeToggle />
             <button onClick={() => window.location.href = '/'} className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-fca-gray/30 dark:bg-fca-dark/80 dark:hover:bg-fca-dark dark:border-fca-charcoal transition-all font-semibold text-sm text-slate-700 dark:text-slate-200">
               Volver a Registro
