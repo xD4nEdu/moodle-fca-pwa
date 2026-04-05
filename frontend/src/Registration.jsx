@@ -279,16 +279,16 @@ export default function Registration() {
         <BackgroundGlow />
         <div className="absolute top-8 right-8"><ThemeToggle /></div>
         
-        <GlassCard className="max-w-sm w-full">
+        <GlassCard className="max-w-sm w-full !p-8">
           <motion.div 
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="bg-fca-orange/10 text-fca-orange p-5 rounded-full w-20 h-20 mx-auto flex items-center justify-center mb-6 shadow-glow"
+            className="bg-fca-orange/10 dark:bg-fca-orange/20 text-fca-orange p-5 rounded-2xl w-20 h-20 mx-auto flex items-center justify-center mb-6"
           >
             <Smartphone className="w-10 h-10" />
           </motion.div>
           
-          <h1 className="text-3xl font-black bg-gradient-to-r from-fca-orange to-fca-yellow bg-clip-text text-transparent mb-4 tracking-tighter">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">
             Instala la App
           </h1>
           <p className="text-slate-300 mb-8 text-sm font-medium leading-relaxed px-2">
@@ -335,127 +335,114 @@ export default function Registration() {
         <div className="absolute top-8 right-8 z-50"><ThemeToggle /></div>
         
         <GlassCard className="max-w-md w-full !p-8">
-          <div className="flex items-center justify-center mb-10 relative">
-             <motion.div
-               animate={{ y: [0, -8, 0] }}
-               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-               className="bg-gradient-to-br from-fca-orange/20 to-fca-yellow/10 p-6 rounded-[2rem] shadow-glow border border-fca-orange/20"
-             >
-                <GraduationCap className="w-14 h-14 text-fca-orange drop-shadow-[0_0_15px_rgba(255,152,0,0.5)]" />
-             </motion.div>
-             <div className="absolute -bottom-3 bg-white dark:bg-[#0D0D0D] px-4 py-1.5 rounded-full border border-black/5 dark:border-white/10 flex items-center gap-2 shadow-xl">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">FCA LIVE Sync</span>
-             </div>
-          </div>
-          
-          <h2 className={`text-3xl font-black bg-gradient-to-r bg-clip-text text-transparent text-center mb-2 tracking-tighter transition-all ${accountStatus?.is_active ? 'from-fca-orange to-fca-yellow' : 'from-slate-400 to-slate-600'}`}>
-            {accountStatus?.is_active ? 'Notificaciones Activadas' : 'Notificaciones Desactivadas'}
-          </h2>
-          
-          <div className="flex flex-col items-center mb-8">
-            <p className="text-center text-slate-500 dark:text-slate-400 mb-4 text-sm font-medium">
-              {accountStatus?.is_active ? 'Recuperando avisos en tiempo real' : 'Avisos pausados temporalmente'}
-            </p>
-            <button
-              onClick={handleToggleActive}
-              className={`relative inline-flex h-8 w-16 items-center rounded-full transition-colors cursor-pointer shadow-inner ${accountStatus?.is_active ? 'bg-fca-orange' : 'bg-slate-300 dark:bg-slate-700'}`}
-            >
-              <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform shadow-md ${accountStatus?.is_active ? 'translate-x-[34px]' : 'translate-x-1'}`} />
-            </button>
-          </div>
-          
-          {accountStatus && (
-            <motion.div 
-               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-               className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 p-5 rounded-3xl mb-8 relative overflow-hidden"
-            >
-               <div className="absolute top-0 right-0 w-32 h-32 bg-fca-orange/10 blur-3xl rounded-full pointer-events-none" />
-               <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Mi Perfil Estudiantil</h3>
-               <div className="space-y-3 relative z-10">
-                 <div className="flex justify-between items-center">
-                   <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Carrera</span>
-                   <span className="text-sm font-black text-slate-800 dark:text-slate-100 capitalize">{accountStatus.faculty || 'Cargando...'}</span>
-                 </div>
-                 <div className="flex justify-between items-center pt-3 mt-1 border-t border-black/5 dark:border-white/5">
-                   <span className="text-sm font-bold text-slate-500 dark:text-slate-400">No. Cuenta</span>
-                   <span className="text-sm font-black text-slate-800 dark:text-slate-100">{accountStatus.moodle_username || 'Cargando...'}</span>
-                 </div>
-               </div>
-            </motion.div>
-          )}
-
-          <div className="space-y-6">
-            {accountStatus?.device_count > 1 && (
-                 <motion.div 
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="bg-fca-orange/5 border border-fca-orange/10 p-4 rounded-2xl flex items-center gap-4 group"
-              >
-                 <div className="bg-black/5 dark:bg-white/5 p-2.5 rounded-xl group-hover:bg-fca-orange/20 transition-colors">
-                   <Smartphone className="w-5 h-5 text-fca-orange" />
-                 </div>
-                 <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                   <span className="text-fca-orange">{accountStatus.device_count}</span> Dispositivos vinculados con éxito.
-                 </p>
-              </motion.div>
-            )}
-
-            <div>
-              <div className="flex items-center justify-between mb-4 px-2">
-                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <Bell className="w-3.5 h-3.5 text-fca-orange" />
-                  Últimos Avisos
-                </h3>
-                {accountStatus?.recent_notifications?.length > 0 && (
-                  <span className="text-[10px] font-bold text-fca-orange/60">{accountStatus.recent_notifications.length} recientes</span>
-                )}
-              </div>
-              
-              <motion.div 
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-                className="space-y-3 max-h-[45vh] overflow-y-auto pr-2 scrollbar-hide pb-4"
-              >
-                {accountStatus?.recent_notifications?.length > 0 ? (
-                  accountStatus.recent_notifications.map((n) => (
-                    <NotificationItem 
-                      key={n.id}
-                      id={n.id}
-                      date={n.date} 
-                      message={n.message} 
-                      isRead={n.is_read}
-                      onRead={handleReadNotification}
-                      onDelete={handleDeleteNotification}
-                    />
-                  ))
-                ) : (
-                  <div className="text-center py-16 bg-white/5 rounded-[2rem] border border-dashed border-white/10 opacity-30 mt-2">
-                    <Bell className="w-10 h-10 mx-auto mb-4" />
-                    <p className="text-xs font-black tracking-widest uppercase">Todo en calma</p>
-                  </div>
-                )}
-              </motion.div>
+          <div className="flex items-center justify-between mb-8">
+            <div className="bg-slate-100 dark:bg-black p-3 rounded-2xl border border-slate-200 dark:border-white/5">
+              <GraduationCap className="w-6 h-6 text-slate-800 dark:text-slate-200" />
             </div>
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/10 px-3 py-1.5 rounded-full flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+              <span className="text-[10px] font-bold tracking-widest text-emerald-600 dark:text-emerald-400 uppercase">Live Sync</span>
+            </div>
+          </div>
+
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-6 leading-tight">
+            Hola, <br/><span className="text-slate-400 font-medium">bienvenido.</span>
+          </h2>
+
+          <div className="grid grid-cols-2 gap-3 mb-8">
+            {/* Bento Block 1: Profile */}
+            <div className="col-span-2 bg-slate-50/50 dark:bg-zinc-900/50 border border-slate-100 dark:border-white/5 rounded-3xl p-5 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-4 block">Estudiante</span>
+              <div className="flex justify-between items-end">
+                <div>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Carrera</p>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-white capitalize">{accountStatus?.faculty || '---'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Cuenta</p>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-white">{accountStatus?.moodle_username || '---'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bento Block 2: Toggle */}
+            <div className="bg-slate-50/50 dark:bg-zinc-900/50 border border-slate-100 dark:border-white/5 rounded-[1.5rem] p-5 flex flex-col justify-between hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors">
+               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-4 block">Alertas</span>
+               <div className="flex justify-between items-end mt-auto">
+                 <span className={`text-sm font-semibold transition-colors ${accountStatus?.is_active ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                   {accountStatus?.is_active ? 'ON' : 'OFF'}
+                 </span>
+                 <button
+                   onClick={handleToggleActive}
+                   className={`relative inline-flex h-7 w-[44px] items-center rounded-full transition-colors ${accountStatus?.is_active ? 'bg-slate-900 dark:bg-white' : 'bg-slate-200 dark:bg-zinc-800'}`}
+                 >
+                   <span className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-black transition-transform shadow-sm ${accountStatus?.is_active ? 'translate-x-[20px]' : 'translate-x-[4px]'}`} />
+                 </button>
+               </div>
+            </div>
+
+            {/* Bento Block 3: Devices */}
+            <div className="bg-slate-50/50 dark:bg-zinc-900/50 border border-slate-100 dark:border-white/5 rounded-[1.5rem] p-5 flex flex-col justify-between hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors">
+               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-4 block">Sesiones</span>
+               <div className="flex items-center justify-between mt-auto">
+                 <Smartphone className="w-5 h-5 text-slate-400" />
+                 <span className="text-xl font-bold leading-none text-slate-900 dark:text-white">{accountStatus?.device_count || 1}</span>
+               </div>
+            </div>
+          </div>
+
+          <div className="pt-6">
+            <div className="flex items-center justify-between mb-4 px-2">
+              <h3 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                Notificaciones
+              </h3>
+              {accountStatus?.recent_notifications?.length > 0 && (
+                <span className="text-[10px] font-bold text-slate-400">{accountStatus.recent_notifications.length} recientes</span>
+              )}
+            </div>
+            
+            <motion.div 
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+              className="space-y-3 max-h-[45vh] overflow-y-auto pr-2 scrollbar-hide pb-4"
+            >
+              {accountStatus?.recent_notifications?.length > 0 ? (
+                accountStatus.recent_notifications.map((n) => (
+                  <NotificationItem 
+                    key={n.id}
+                    id={n.id}
+                    date={n.date} 
+                    message={n.message} 
+                    isRead={n.is_read}
+                    onRead={handleReadNotification}
+                    onDelete={handleDeleteNotification}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-12 rounded-3xl border border-dashed border-slate-200 dark:border-white/5 opacity-50 mt-2">
+                  <Bell className="w-8 h-8 text-slate-400 mx-auto mb-3" />
+                  <p className="text-[11px] font-bold tracking-widest uppercase text-slate-400">Todo en calma</p>
+                </div>
+              )}
+            </motion.div>
           </div>
           
           {devices?.length > 0 && (
-            <div className="pt-4 mt-8 border-t border-white/5">
-              <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-4 px-2">
-                <Smartphone className="w-3.5 h-3.5 text-fca-orange" />
-                Mis Dispositivos ({devices.length})
+            <div className="pt-6 mt-4 border-t border-slate-100 dark:border-white/5">
+              <h3 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 px-2">
+                Sesiones Activas ({devices.length})
               </h3>
               <div className="space-y-2">
                 {devices.map((dev) => (
-                  <div key={dev.id} className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 p-3 rounded-2xl flex items-center justify-between group hover:bg-black/10 transition-all">
+                  <div key={dev.id} className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 p-4 rounded-[1.5rem] flex items-center justify-between group hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-colors">
                     <div className="flex flex-col">
-                      <span className="text-xs font-black text-slate-800 dark:text-slate-200">{dev.name}</span>
-                      <span className="text-[10px] text-slate-500 font-bold">Visto: {dev.last_used}</span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{dev.name}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Visto: {dev.last_used}</span>
                     </div>
                     <button 
                       onClick={() => handleDeleteDevice(dev.id)}
-                      className="p-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                      className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full transition-all"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -465,12 +452,11 @@ export default function Registration() {
             </div>
           )}
 
-          <div className="text-center pt-10 mt-6 border-t border-white/5 opacity-40 hover:opacity-100 transition-opacity">
+          <div className="text-center pt-8 mt-2">
             <button 
               onClick={handleDeleteAccount}
-              className="flex items-center justify-center gap-2 w-full text-[10px] font-bold text-red-400 uppercase tracking-widest hover:text-red-500 transition-colors py-2"
+              className="flex items-center justify-center gap-2 w-full text-[11px] font-bold text-slate-400 hover:text-red-500 dark:hover:text-red-400 uppercase tracking-widest transition-colors py-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5"
             >
-              <Trash2 className="w-4 h-4" />
               Cerrar sesión en todos los equipos
             </button>
           </div>
@@ -478,6 +464,7 @@ export default function Registration() {
       </div>
     );
   }
+
 
   // View: Registration Form
   return (
@@ -489,7 +476,7 @@ export default function Registration() {
         <motion.h1 
           initial={{ y: -10 }}
           animate={{ y: 0 }}
-          className="text-4xl font-black text-center mb-2 bg-gradient-to-r from-fca-orange to-fca-yellow bg-clip-text text-transparent tracking-tighter"
+          className="text-3xl font-bold text-center mb-2 text-slate-900 dark:text-white tracking-tight"
         >
           Moodle Notifier
         </motion.h1>
@@ -512,28 +499,28 @@ export default function Registration() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-fca-orange/10 border border-fca-orange/20 p-6 rounded-[2rem] mb-8"
+              className="bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 p-6 rounded-3xl mb-8"
             >
-              <h3 className="text-lg font-black text-fca-orange mb-2 tracking-tight">Cuenta Detectada</h3>
-              <p className="text-xs text-slate-300 font-medium mb-6 leading-relaxed">
-                Ya tienes <strong>{existsData.count}</strong> dispositivo(s) vinculado(s). ¿Qué deseas hacer con este equipo?
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Cuenta Detectada</h3>
+              <p className="text-sm text-slate-500 font-medium mb-6 leading-relaxed">
+                Ya tienes <strong>{existsData.count}</strong> sesión(es) vinculada(s). ¿Qué deseas hacer con este dispositivo?
               </p>
               <div className="grid grid-cols-1 gap-3">
                 <button 
                   onClick={() => handleRegister(null, null, false)}
-                  className="bg-fca-orange text-white py-4 rounded-2xl text-xs font-black shadow-lg shadow-fca-orange/20 cursor-pointer active:scale-95 transition-all"
+                  className="bg-slate-900 dark:bg-white text-white dark:text-black py-3.5 rounded-2xl text-xs font-bold transition-all hover:bg-slate-800 dark:hover:bg-slate-100"
                 >
-                  ➕ AÑADIR DISPOSITIVO
+                  VINCULAR COMO NUEVO DISPOSITIVO
                 </button>
                 <button 
                   onClick={() => handleRegister(null, null, true)}
-                  className="bg-white/10 hover:bg-white/20 text-white py-4 rounded-2xl text-xs font-black transition-all cursor-pointer active:scale-95"
+                  className="bg-slate-200/50 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 py-3.5 rounded-2xl text-xs font-bold transition-all"
                 >
-                  🔄 REEMPLAZAR ANTERIORES
+                  REEMPLAZAR ANTERIORES
                 </button>
                 <button 
                   onClick={() => { setShowDeviceChoice(false); setExistsData(null); }}
-                  className="text-[10px] text-fca-gray font-bold uppercase tracking-widest mt-2"
+                  className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-2 hover:text-slate-500 transition-colors"
                 >
                   Cancelar
                 </button>

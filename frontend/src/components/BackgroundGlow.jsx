@@ -3,41 +3,11 @@ import { motion } from 'framer-motion';
 
 const BackgroundGlow = memo(() => {
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-[#0D0D0D]">
-      {/* Orange Glow */}
-      <motion.div
-        animate={{
-          x: [0, 80, -40, 0],
-          y: [0, -80, 40, 0],
-          scale: [1, 1.1, 0.9, 1],
-        }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-        style={{ willChange: 'transform' }}
-        className="absolute top-[-20%] right-[-10%] w-[80%] h-[80%] rounded-full bg-fca-orange/30 blur-[120px]"
-      />
-      
-      {/* Yellow Glow */}
-      <motion.div
-        animate={{
-          x: [0, -80, 80, 0],
-          y: [0, 120, -40, 0],
-          scale: [1, 0.95, 1.05, 1],
-        }}
-        transition={{
-          duration: 30,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-        style={{ willChange: 'transform' }}
-        className="absolute bottom-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-fca-yellow/20 blur-[100px]"
-      />
-      
-      {/* Radial Gradient for deepness */}
-      <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#0D0D0D]/90" />
+    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-[#FAFAFA] dark:bg-black transition-colors duration-200">
+      {/* Vercel-like extremely subtle ambient mesh */}
+      <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] rounded-full bg-slate-200/50 dark:bg-fca-orange/5 blur-[120px]" />
+      <div className="absolute bottom-[-10%] left-[-5%] w-[50%] h-[50%] rounded-full bg-slate-200/50 dark:bg-fca-yellow/5 blur-[120px]" />
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-[0.05] mix-blend-overlay" />
     </div>
   );
 });

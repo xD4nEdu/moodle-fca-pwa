@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, CheckCircle2 } from 'lucide-react';
 
 const NotificationItem = ({ id, date, message, isRead = false, onRead }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showNew, setShowNew] = useState(!isRead);
 
-  // Parsear el mensaje estructurado
   const hasDetails = message.includes('[DETAILS]');
   const summaryPart = hasDetails ? message.split('[DETAILS]')[0].trim() : message;
   const detailsPart = hasDetails ? message.split('[DETAILS]')[1].trim() : null;
@@ -20,73 +18,53 @@ const NotificationItem = ({ id, date, message, isRead = false, onRead }) => {
   };
 
   return (
-    <div className="relative mb-3 rounded-[1.8rem] overflow-hidden">
-      <motion.div
-        layout
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`relative z-10 transition-all duration-300 ${
-          isOpen 
-            ? 'bg-black/5 dark:bg-white/12 ring-2 ring-fca-orange/20 dark:ring-white/20' 
-            : 'bg-white/80 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-black/5 dark:border-white/5 shadow-md dark:shadow-lg'
-        } ${showNew ? 'ring-2 ring-fca-orange/40' : ''}`}
-      >
-        <div className="p-5 cursor-pointer select-none" onClick={handleOpen}>
-          <div className="flex items-center gap-4">
-            <div className={`p-2.5 rounded-xl transition-all shadow-inner ${
-              showNew 
-                ? 'bg-fca-orange text-white' 
-                : 'bg-black/5 dark:bg-white/5 text-slate-500 dark:text-slate-400'
+    <motion.div
+      layout
+      transition={{ layout: { duration: 0.2, ease: "easeOut" } }}
+      className={`relative mb-3 rounded-3xl overflow-hidden cursor-pointer transition-all duration-200 ${
+        isOpen 
+          ? 'bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:bg-zinc-900 border border-slate-200 dark:border-white/5' 
+          : 'bg-white/80 dark:bg-white/[0.04] hover:bg-white dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 shadow-sm'
+      }`}
+      onClick={handleOpen}
+    >
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+          {/* Notification Icon Bubble */}
+          <div className={`mt-0.5 w-2 h-2 shrink-0 rounded-full transition-colors ${showNew ? 'bg-fca-orange' : 'bg-transparent'}`} />
+          
+          <div className="flex-1 min-w-0 pr-1">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{summaryPart.includes('-') ? summaryPart.split('-')[0].trim() : 'Aviso FCA'}</span>
+              <span className="text-[10px] text-slate-500 font-medium">{date}</span>
+            </div>
+            <p className={`text-sm leading-tight transition-colors line-clamp-2 ${
+              showNew ? 'text-slate-900 dark:text-slate-100 font-medium' : 'text-slate-600 dark:text-slate-400'
             }`}>
-              {showNew ? <Info className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[10px] font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase italic opacity-70">{date}</span>
-                {showNew && (
-                  <span className="bg-fca-orange text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase shadow-glow-sm">Nuevo</span>
-                )}
-              </div>
-              <p className={`text-[13px] font-bold leading-tight transition-colors ${
-                showNew 
-                  ? 'text-slate-900 dark:text-slate-100' 
-                  : 'text-slate-700 dark:text-slate-400'
-              }`}>
-                {summaryPart}
-              </p>
-            </div>
+              {summaryPart.includes('-') ? summaryPart.split('-').slice(1).join('-').trim() : summaryPart}
+            </p>
           </div>
-
-          <AnimatePresence>
-            {isOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1, marginTop: 20 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="pt-5 border-t border-black/5 dark:border-white/10">
-                  <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-5 border border-black/5 dark:border-white/5 shadow-inner">
-                     <div className="flex items-center gap-2 mb-3">
-                        <div className="w-1.5 h-1.5 bg-fca-orange rounded-full" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-fca-orange/80">Detalles del Aviso</span>
-                     </div>
-                     <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed whitespace-pre-wrap">
-                       {detailsPart || summaryPart}
-                     </p>
-                  </div>
-                  <div className="mt-4 flex justify-between items-center px-1">
-                     <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter italic">Este aviso caducará pronto</span>
-                     <CheckCircle2 className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
-      </motion.div>
-    </div>
+
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <div className="pt-4 mt-3 border-t border-slate-100 dark:border-white/10 ml-5 pr-2">
+                 <p className="text-sm text-slate-700 dark:text-slate-300 font-normal leading-relaxed whitespace-pre-wrap">
+                   {detailsPart || summaryPart}
+                 </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
   );
 };
 

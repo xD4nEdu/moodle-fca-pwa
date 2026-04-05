@@ -11,21 +11,23 @@
   }
 
   body {
-    @apply bg-[#0D0D0D] text-slate-100 antialiased min-h-screen relative overflow-x-hidden transition-colors duration-500;
-    font-family: 'Outfit', sans-serif;
+    @apply bg-[#FAFAFA] text-slate-900 dark:bg-black dark:text-slate-100 antialiased min-h-screen relative overflow-x-hidden transition-colors duration-200;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-white/5 backdrop-blur-lg border border-white/10 shadow-2xl;
-    will-change: backdrop-filter, transform;
+    @apply bg-white border border-slate-200 shadow-sm dark:bg-white/[0.02] dark:border-white/5 dark:shadow-none;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
   
   .glass-dark {
-    @apply bg-black/40 backdrop-blur-xl border border-white/5 shadow-2xl;
-    will-change: backdrop-filter, transform;
+    @apply bg-white/80 border border-slate-200 shadow-sm dark:bg-black/40 dark:border-white/10 dark:shadow-none;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
   }
 
   .text-shadow-glow {

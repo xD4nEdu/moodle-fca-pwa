@@ -137,19 +137,19 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen p-4 md:p-10 font-outfit relative">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-end mb-8 border-b border-fca-gray/30 dark:border-fca-charcoal pb-4">
+        <div className="flex justify-between items-end mb-8 border-b border-slate-200 dark:border-white/5 pb-6">
           <div>
-            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-fca-orange to-fca-orangeLight dark:from-fca-orangeLight dark:to-fca-yellow bg-clip-text text-transparent drop-shadow-sm">Panel de Control</h1>
-            <p className="text-slate-500 dark:text-fca-gray mt-2">Administración de Usuarios Moodle PWA</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Panel de Control</h1>
+            <p className="text-slate-500 text-sm mt-1">Administración de Usuarios Moodle PWA</p>
           </div>
-          <div className="flex flex-wrap gap-3 items-center">
-            <button onClick={handleBroadcast} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-fca-orange to-fca-orangeShadow hover:from-fca-orangeShadow hover:to-fca-orange text-white font-bold text-sm shadow-md shadow-fca-orange/20 transition-all active:scale-95 flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
-              Aviso general de actualización
+          <div className="flex flex-wrap gap-2 items-center">
+            <button onClick={handleBroadcast} className="px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-black font-semibold text-[11px] transition-all hover:bg-slate-800 dark:hover:bg-slate-100 flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-1 dark:focus:ring-offset-black">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+              Aviso general
             </button>
             <ThemeToggle />
-            <button onClick={() => window.location.href = '/'} className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-fca-gray/30 dark:bg-fca-dark/80 dark:hover:bg-fca-dark dark:border-fca-charcoal transition-all font-semibold text-sm text-slate-700 dark:text-slate-200">
-              Volver a Registro
+            <button onClick={() => window.location.href = '/'} className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/5 font-semibold text-[11px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+              Volver
             </button>
           </div>
         </div>
@@ -157,47 +157,47 @@ export default function AdminDashboard() {
         {error && <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/50 text-red-600 dark:text-red-400 p-4 rounded-xl mb-6">{error}</div>}
 
         {loading ? (
-          <div className="text-center text-slate-500 dark:text-fca-gray py-10">Cargando usuarios...</div>
+          <div className="text-center text-slate-400 py-10 text-sm">Cargando usuarios...</div>
         ) : (
-          <div className="bg-white/80 dark:bg-fca-charcoal/30 backdrop-blur-xl border border-fca-gray/30 dark:border-fca-charcoal/80 rounded-2xl overflow-hidden shadow-xl dark:shadow-2xl">
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-fca-dark/50 text-slate-600 dark:text-fca-gray text-sm uppercase tracking-wider">
-                    <th className="p-5 font-semibold">ID</th>
-                    <th className="p-5 font-semibold">Carrera</th>
-                    <th className="p-5 font-semibold">No. Cuenta</th>
-                    <th className="p-5 font-semibold">Estado</th>
-                    <th className="p-5 font-semibold">Push Vinculado</th>
-                    <th className="p-5 font-semibold text-right">Acciones</th>
+                  <tr className="border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+                    <th className="px-5 py-3 text-[10px] uppercase tracking-wider font-semibold text-slate-500">ID</th>
+                    <th className="px-5 py-3 text-[10px] uppercase tracking-wider font-semibold text-slate-500">Carrera</th>
+                    <th className="px-5 py-3 text-[10px] uppercase tracking-wider font-semibold text-slate-500">No. Cuenta</th>
+                    <th className="px-5 py-3 text-[10px] uppercase tracking-wider font-semibold text-slate-500">Estado</th>
+                    <th className="px-5 py-3 text-[10px] uppercase tracking-wider font-semibold text-slate-500">Push</th>
+                    <th className="px-5 py-3 text-[10px] uppercase tracking-wider font-semibold text-slate-500 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-fca-gray/20 dark:divide-fca-charcoal/50">
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {users.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="p-8 text-center text-slate-500 dark:text-fca-gray">No hay usuarios registrados aún.</td>
+                      <td colSpan="6" className="p-8 text-center text-slate-500">No hay usuarios registrados aún.</td>
                     </tr>
                   ) : users.map(u => (
-                    <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-fca-dark/40 transition-colors">
-                      <td className="p-5 text-slate-500 dark:text-fca-gray font-mono">#{u.id}</td>
-                      <td className="p-5 capitalize font-medium text-slate-800 dark:text-slate-200">{u.faculty}</td>
-                      <td className="p-5 text-slate-800 dark:text-slate-200">{u.moodle_username}</td>
-                      <td className="p-5">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${u.is_active ? 'bg-fca-yellow/20 text-fca-orangeShadow dark:bg-fca-yellow/10 dark:text-fca-yellow' : 'bg-fca-charcoal/10 text-fca-charcoal dark:bg-fca-charcoal/30 dark:text-fca-gray'}`}>
+                    <tr key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                      <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-mono text-xs">#{u.id}</td>
+                      <td className="px-5 py-4 capitalize font-medium text-slate-800 dark:text-slate-200">{u.faculty}</td>
+                      <td className="px-5 py-4 text-slate-800 dark:text-slate-200 font-medium">{u.moodle_username}</td>
+                      <td className="px-5 py-4">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${u.is_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-400'}`}>
                           {u.is_active ? 'ACTIVO' : 'PAUSADO'}
                         </span>
                       </td>
-                      <td className="p-5">
+                      <td className="px-5 py-4">
                          {u.device_count > 0 ? (
-                            <span className="text-fca-orange dark:text-fca-orangeLight flex items-center gap-1.5 font-medium text-sm">
-                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
+                            <span className="text-slate-900 dark:text-white flex items-center gap-1.5 font-medium text-xs">
+                              <svg className="w-3.5 h-3.5 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
                               Sí ({u.device_count})
                             </span>
                          ) : (
-                            <span className="text-slate-400 dark:text-fca-gray text-sm">No</span>
+                            <span className="text-slate-400 dark:text-slate-500 text-xs">No</span>
                          )}
                       </td>
-                      <td className="p-5">
+                      <td className="px-5 py-4">
                          <div className="flex justify-end gap-2">
                             <button onClick={() => handleTestPush(u.id)} className="px-3 py-1.5 bg-fca-orange/10 hover:bg-fca-orange/20 text-fca-orange border border-fca-orange/30 dark:bg-fca-orange/10 dark:hover:bg-fca-orange/20 dark:text-fca-orangeLight dark:border-fca-orange/30 rounded-lg text-xs font-bold transition-all">
                               Probar
