@@ -223,3 +223,18 @@ primary_region = "ord"           # Chicago
 6. El semáforo `asyncio.Semaphore(3)` protege contra ban de Moodle UNAM — no subirlo
 7. El proyecto originalmente corría en **Termux** (Android) antes de migrar a Fly.io
 8. El repo Git está en: `https://github.com/xD4nEdu/moodle-fca-pwa.git`, branch `main`
+
+## 15. Sistema de Diseño (UI/UX) y Google Stitch
+
+La interfaz de usuario ha sido rediseñada profesionalmente utilizando **Google Stitch MCP**. 
+
+### Proyecto en Google Stitch
+- **Nombre:** Moodle FCA PWA Neo-Clean
+- **ID del Proyecto:** `4636479403027147075`
+- **Design System:** "The Academic Curator"
+
+### Características del "Neo-Clean" Vercel Style implementado:
+- **Estructura Bento Grid:** Se abandonaron las "tarjetas verticales clásicas" por mosaicos asimétricos y densos que facilitan leer datos en menos de un segundo (Dashboard de Estudiante).
+- **Adiós a los 1px borders convencionales:** Se eliminaron las sombras profundas y los gradientes intrusivos. Los bordes se manejan con opacidades sutiles (`border-black/5` o `border-white/5`).
+- **Estados y Badges ("Pills"):** Las tablas de administración ya no usan botones anchos, sino etiquetas pequeñas (`px-2 py-0.5 text-[10px]`) con colores semánticos puros como los usados por Stripe/Vercel (ej. esmeralda para activo, slate para inactivo).
+- **Variantes de UI:** Las pruebas de estilo "Dark Mode Puro" (Charcoal oscuro, `#0D0D0D`) se han dejado como variantes pre-renderizadas dentro del proyecto de Google Stitch para futura evaluación o importación directa sin afectar la base de código actual.
